@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Personal</title>
+    <link rel="stylesheet" href="/css/app.css" />
+    <script type="module" src="/js/personal.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar"></aside>
+      <main class="main">
+        <div class="page-head">
+          <div><h1>Personal</h1><div class="sub">Quién entra al panel y qué puede hacer según su puesto.</div></div>
+          <div class="spacer"></div>
+          <button class="btn btn-primary" id="btn-new"></button>
+        </div>
+        <div class="dash">
+          <section class="card"><div class="table-wrap" id="users"></div></section>
+          <section class="card">
+            <div class="card-head"><h2>Qué hace cada rol</h2></div>
+            <div class="card-body stack" id="roles"></div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <dialog id="user-dialog" aria-labelledby="user-title">
+      <form class="modal" id="user-form" novalidate>
+        <div class="modal-head"><h2 id="user-title">Nueva persona</h2><div class="spacer"></div><button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar"></button></div>
+        <div class="modal-body stack">
+          <div class="grid-2">
+            <label class="field"><span>Nombre</span><input class="input" name="name" required maxlength="80" /></label>
+            <label class="field"><span>Correo (para entrar)</span><input class="input" name="email" type="email" required autocomplete="off" /></label>
+          </div>
+          <div class="grid-2">
+            <label class="field"><span>Rol</span><select class="input" name="role"><option value="VENTAS">Ventas</option><option value="DESPACHO">Despacho</option><option value="BODEGA">Bodega</option><option value="ADMIN">Administrador</option></select></label>
+            <label class="field"><span id="password-label">Contraseña (mínimo 8)</span><input class="input" name="password" type="password" autocomplete="new-password" minlength="8" /></label>
+          </div>
+          <label class="check" id="active-wrap" hidden><input type="checkbox" name="active" /> Puede entrar al panel</label>
+          <div class="error-box" id="user-error" hidden></div>
+        </div>
+        <div class="modal-foot"><div class="spacer"></div><button type="button" class="btn" data-close>Cancelar</button><button type="submit" class="btn btn-primary">Guardar</button></div>
+      </form>
+    </dialog>
+  </body>
+</html>

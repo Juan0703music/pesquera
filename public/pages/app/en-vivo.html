@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>En vivo</title>
+    <link rel="stylesheet" href="/css/app.css" />
+    <script src="/socket.io/socket.io.min.js" defer></script>
+    <script type="module" src="/js/en-vivo.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar"></aside>
+      <main class="main">
+        <div class="page-head">
+          <div>
+            <h1>En vivo</h1>
+            <div class="sub" id="updated">Cargando…</div>
+          </div>
+          <span class="live-pill" id="live-pill" data-state="connecting"><span class="live-dot"></span><span>Conectando…</span></span>
+          <div class="spacer"></div>
+          <span class="clock" id="clock"></span>
+        </div>
+
+        <div class="stats stats-4" id="kpis"></div>
+
+        <div class="dash">
+          <section class="card">
+            <div class="card-head"><h2>Ventas de hoy por hora y categoría</h2><div class="spacer"></div><div class="legend" data-legend="categories"></div></div>
+            <div class="card-body">
+              <div class="viz3d viz3d-tall" id="viz-hours"></div>
+              <div class="viz-foot"><span data-hint></span><div class="spacer"></div><details class="as-table" id="table-hours"><summary></summary><div class="table-wrap"></div></details></div>
+            </div>
+          </section>
+          <div class="side-stack">
+            <section class="card">
+              <div class="card-head"><h2>Pedidos ahora</h2></div>
+              <div class="card-body"><div class="pipeline" id="pipeline"></div></div>
+            </section>
+            <section class="card">
+              <div class="card-head"><h2>Actividad</h2><div class="spacer"></div><span class="muted" id="feed-note"></span></div>
+              <div class="card-body"><ol class="feed" id="feed" aria-live="polite"></ol></div>
+            </section>
+          </div>
+
+          <section class="card">
+            <div class="card-head"><h2>Bodega en vivo</h2><span class="muted">Altura = valor en bodega · color = nivel de existencia</span></div>
+            <div class="card-body">
+              <div class="legend" id="legend-stock"></div>
+              <div class="viz3d" id="viz-stock"></div>
+              <div class="viz-foot"><span data-hint></span><div class="spacer"></div><details class="as-table" id="table-stock"><summary></summary><div class="table-wrap"></div></details></div>
+            </div>
+          </section>
+          <div class="side-stack">
+            <section class="card">
+              <div class="card-head"><h2>Más vendidos hoy</h2></div>
+              <div class="card-body"><div class="rank" id="top"></div></div>
+            </section>
+            <section class="card">
+              <div class="card-head"><h2>Formas de pago hoy</h2></div>
+              <div class="card-body"><div class="rank" id="payments"></div></div>
+            </section>
+          </div>
+
+          <section class="card full">
+            <div class="card-head"><h2>Últimos 14 días por categoría</h2><div class="spacer"></div><div class="legend" data-legend="categories"></div></div>
+            <div class="card-body">
+              <div class="viz3d" id="viz-days"></div>
+              <div class="viz-foot"><span data-hint></span><div class="spacer"></div><details class="as-table" id="table-days"><summary></summary><div class="table-wrap"></div></details></div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

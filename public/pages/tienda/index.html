@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tienda</title>
+    <meta name="description" content="Pescado y mariscos frescos a domicilio. Pide en línea." />
+    <link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/tienda.css" />
+    <script type="module" src="/js/tienda.js"></script>
+  </head>
+  <body>
+    <header class="store-hero">
+      <div class="wrap">
+        <h1 id="store-name">Pesquera</h1>
+        <p id="store-tagline">Pescado y mariscos frescos. Pide aquí y te avisamos cuando esté listo.</p>
+        <div class="row" id="store-meta"></div>
+      </div>
+    </header>
+    <div class="wrap">
+      <nav class="chips" id="chips" aria-label="Categorías"></nav>
+      <div class="store-layout">
+        <main id="catalog"><div class="empty">Cargando productos…</div></main>
+        <aside class="card cart" aria-labelledby="cart-title">
+          <div class="card-head"><h2 id="cart-title">Tu pedido</h2></div>
+          <div class="card-body" id="cart"></div>
+        </aside>
+      </div>
+    </div>
+    <div class="cart-bar" id="cart-bar" hidden>
+      <span id="cart-bar-text"></span><span class="spacer"></span>
+      <button class="btn btn-primary" id="cart-bar-open">Ver pedido</button>
+    </div>
+
+    <dialog id="checkout" aria-labelledby="checkout-title">
+      <form class="modal" id="checkout-form" novalidate>
+        <div class="modal-head"><h2 id="checkout-title">Confirmar pedido</h2><div class="spacer"></div><button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar"></button></div>
+        <div class="modal-body stack">
+          <div id="checkout-summary"></div>
+          <div class="segmented" role="radiogroup" aria-label="Entrega">
+            <label><input type="radio" name="deliveryType" value="DOMICILIO" checked /><span>A domicilio</span></label>
+            <label><input type="radio" name="deliveryType" value="RECOGE" /><span>Paso a recoger</span></label>
+          </div>
+          <div class="grid-2">
+            <label class="field"><span>Nombre</span><input class="input" name="customer.name" autocomplete="name" required maxlength="80" /></label>
+            <label class="field"><span>Celular</span><input class="input" name="customer.phone" inputmode="tel" autocomplete="tel" required placeholder="300 123 4567" /></label>
+          </div>
+          <label class="field" id="address-field"><span>Dirección</span><input class="input" name="customer.address" autocomplete="street-address" maxlength="200" placeholder="Barrio, calle, número, referencia" /></label>
+          <label class="field"><span>Forma de pago</span>
+            <select class="input" name="paymentMethod"><option value="EFECTIVO">Efectivo al recibir</option><option value="NEQUI">Nequi</option><option value="TRANSFERENCIA">Transferencia</option><option value="DATAFONO">Datáfono al recibir</option></select>
+          </label>
+          <label class="field"><span>Indicaciones (opcional)</span><input class="input" name="notes" maxlength="300" placeholder="Limpio, en postas, sin cabeza…" /></label>
+          <input class="sr-only" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <p class="muted">Los productos por kilo se pesan al alistar: el total final puede variar un poco según el peso real.</p>
+          <div class="error-box" id="checkout-error" hidden></div>
+        </div>
+        <div class="modal-foot"><div class="spacer"></div><button type="button" class="btn" data-close>Seguir comprando</button><button type="submit" class="btn btn-primary btn-lg" id="place">Hacer pedido</button></div>
+      </form>
+    </dialog>
+    <dialog id="cart-dialog" aria-labelledby="cart-dialog-title">
+      <div class="modal">
+        <div class="modal-head"><h2 id="cart-dialog-title">Tu pedido</h2><div class="spacer"></div><button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar"></button></div>
+        <div class="modal-body" id="cart-mobile"></div>
+      </div>
+    </dialog>
+  </body>
+</html>

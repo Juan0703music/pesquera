@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ajustes</title>
+    <link rel="stylesheet" href="/css/app.css" />
+    <script type="module" src="/js/ajustes.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar"></aside>
+      <main class="main">
+        <div class="page-head"><div><h1>Ajustes</h1><div class="sub">Datos de la pesquera y de la tienda en línea.</div></div></div>
+        <form class="card" id="settings-form" novalidate>
+          <div class="card-body stack">
+            <div class="section-title">La pesquera</div>
+            <div class="grid-2">
+              <label class="field"><span>Nombre</span><input class="input" name="businessName" required maxlength="80" /></label>
+              <label class="field"><span>Dirección</span><input class="input" name="address" maxlength="200" /></label>
+            </div>
+            <div class="grid-2">
+              <label class="field"><span>Teléfono</span><input class="input" name="phone" inputmode="tel" placeholder="300 123 4567" /></label>
+              <label class="field"><span>WhatsApp (celular)</span><input class="input" name="whatsapp" inputmode="tel" placeholder="300 123 4567" /></label>
+            </div>
+            <div class="section-title">Tienda en línea</div>
+            <label class="check"><input type="checkbox" name="storeOpen" /> Recibir pedidos en línea</label>
+            <div class="grid-2">
+              <label class="field"><span>Valor del domicilio</span><input class="input num" name="deliveryFee" inputmode="numeric" /></label>
+              <label class="field"><span>Pedido mínimo en línea</span><input class="input num" name="minOrderTotal" inputmode="numeric" /></label>
+            </div>
+            <div class="row"><a href="/tienda" target="_blank" rel="noopener">Abrir la tienda</a><span class="muted" id="store-url"></span></div>
+            <div class="error-box" id="settings-error" hidden></div>
+          </div>
+          <div class="modal-foot"><div class="spacer"></div><button class="btn btn-primary" type="submit">Guardar ajustes</button></div>
+        </form>
+      </main>
+    </div>
+  </body>
+</html>

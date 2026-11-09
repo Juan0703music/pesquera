@@ -1,0 +1,61 @@
+{
+  "name": "pesquera",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Marea — pedidos, despacho, inventario, ventas del día y analíticas 3D en vivo para una pesquera.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/server.ts",
+    "build": "prisma generate && tsc -p tsconfig.build.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:start": "tsx scripts/dev-db.ts",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "demo:live": "tsx scripts/demo-live.ts",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "argon2": "^0.45.2",
+    "cookie": "^1.1.1",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.3",
+    "helmet": "^8.3.0",
+    "pg": "^8.23.1",
+    "pino": "^10.4.0",
+    "socket.io": "^4.8.4",
+    "three": "^0.187.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.19.2",
+    "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
+    "@types/three": "^0.187.0",
+    "embedded-postgres": "^18.4.0-beta.17",
+    "pino-pretty": "^13.2.0",
+    "prisma": "^7.10.1",
+    "socket.io-client": "^4.8.4",
+    "supertest": "^7.3.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  },
+  "allowScripts": {
+    "argon2@0.45.2": true,
+    "prisma@7.10.1": true,
+    "@prisma/engines@7.10.1": true,
+    "@embedded-postgres/linux-x64@18.4.0-beta.17": true,
+    "esbuild@0.28.2": true
+  }
+}

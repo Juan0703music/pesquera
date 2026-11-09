@@ -1,0 +1,293 @@
+// Marea — software de una pesquera: pedidos, despacho, inventario, ventas del día y analíticas en vivo.
+//
+// Convenciones:
+// - Dinero: enteros en pesos colombianos (COP), sin decimales.
+// - Cantidades: enteros en milésimas («milli»). Por kilo → gramos (1,5 kg = 1500).
+//   Por unidad → milésimas de unidad (3 unidades = 3000), así todo se suma igual y sin errores de redondeo.
+// - Precios: por kilo (unit = KG) o por unidad (unit = UNIDAD).
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────── Enumeraciones ───────────────────────────────
+
+/// ADMIN: el dueño o administrador (todo). VENTAS: recibe pedidos y cobra. DESPACHO: alista, pesa y despacha.
+/// BODEGA: entradas de mercancía, ajustes y mermas.
+enum Role {
+  ADMIN
+  VENTAS
+  DESPACHO
+  BODEGA
+}
+
+enum Unit {
+  KG
+  UNIDAD
+}
+
+enum OrderSource {
+  MOSTRADOR
+  TELEFONO
+  WHATSAPP
+  WEB
+}
+
+/// RECIBIDO → ALISTANDO (pesaje) → LISTO → DESPACHADO (va en camino) → ENTREGADO. CANCELADO en cualquier momento.
+/// El inventario se descuenta al salir de la pesquera (DESPACHADO, o ENTREGADO si el cliente recoge).
+enum OrderStatus {
+  RECIBIDO
+  ALISTANDO
+  LISTO
+  DESPACHADO
+  ENTREGADO
+  CANCELADO
+}
+
+enum DeliveryType {
+  RECOGE
+  DOMICILIO
+}
+
+enum PaymentMethod {
+  EFECTIVO
+  TRANSFERENCIA
+  NEQUI
+  DATAFONO
+  CREDITO
+}
+
+/// ENTRADA: llega mercancía (barco, proveedor). SALIDA_PEDIDO: se despacha un pedido. DEVOLUCION: se anula un
+/// pedido ya despachado. AJUSTE: conteo físico. MERMA: pérdida (se dañó, deshidratación, limpieza).
+enum MovementType {
+  ENTRADA
+  SALIDA_PEDIDO
+  DEVOLUCION
+  AJUSTE
+  MERMA
+}
+
+// ─────────────────────────────── Configuración ───────────────────────────────
+
+/// Una sola fila (id = 1): datos de la pesquera y de la tienda en línea.
+model Setting {
+  id            Int      @id @default(1)
+  businessName  String   @map("business_name")
+  phone         String?
+  whatsapp      String?
+  address       String?
+  storeOpen     Boolean  @default(true) @map("store_open")
+  deliveryFee   Int      @default(0) @map("delivery_fee")
+  minOrderTotal Int      @default(0) @map("min_order_total")
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("settings")
+}
+
+// ─────────────────────────────── Personal y sesiones ───────────────────────────────
+
+model User {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  sessions  Session[]
+  orders    Order[]             @relation("OrderCreatedBy")
+  movements InventoryMovement[]
+  events    OrderEvent[]
+
+  @@map("users")
+}
+
+model Session {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash")
+  userAgent  String?   @map("user_agent")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastUsedAt DateTime  @default(now()) @map("last_used_at") @db.Timestamptz(3)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// ─────────────────────────────── Catálogo e inventario ───────────────────────────────
+
+model Category {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  name      String   @unique
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  categoryId    String   @map("category_id") @db.Uuid
+  name          String   @unique
+  description   String?
+  unit          Unit
+  /// Precio de venta por kilo o por unidad (COP).
+  price         Int
+  /// Costo promedio ponderado por kilo o por unidad (COP), se actualiza con cada entrada.
+  avgCost       Int      @default(0) @map("avg_cost")
+  /// Existencia física en milésimas (gramos si es por kilo).
+  stockMilli    Int      @default(0) @map("stock_milli")
+  /// Por debajo de este nivel se avisa «stock bajo».
+  minStockMilli Int      @default(0) @map("min_stock_milli")
+  active        Boolean  @default(true)
+  /// Se muestra en la tienda en línea.
+  inStore       Boolean  @default(true) @map("in_store")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  category  Category            @relation(fields: [categoryId], references: [id])
+  movements InventoryMovement[]
+  items     OrderItem[]
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+model InventoryMovement {
+  id              String       @id @default(uuid(7)) @db.Uuid
+  productId       String       @map("product_id") @db.Uuid
+  type            MovementType
+  /// Cambio en la existencia (positivo entra, negativo sale), en milésimas.
+  qtyMilli        Int          @map("qty_milli")
+  /// Existencia después del movimiento.
+  stockAfterMilli Int          @map("stock_after_milli")
+  /// Costo por kilo o unidad de una entrada (COP).
+  unitCost        Int?         @map("unit_cost")
+  supplier        String?
+  note            String?
+  orderId         String?      @map("order_id") @db.Uuid
+  userId          String?      @map("user_id") @db.Uuid
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([productId, createdAt])
+  @@index([createdAt])
+  @@map("inventory_movements")
+}
+
+// ─────────────────────────────── Clientes y pedidos ───────────────────────────────
+
+model Customer {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  name      String
+  /// Celular normalizado 57XXXXXXXXXX.
+  phone     String   @unique
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  orders Order[]
+
+  @@map("customers")
+}
+
+model Order {
+  id              String        @id @default(uuid(7)) @db.Uuid
+  number          Int           @unique @default(autoincrement())
+  source          OrderSource
+  status          OrderStatus   @default(RECIBIDO)
+  deliveryType    DeliveryType  @map("delivery_type")
+  customerId      String?       @map("customer_id") @db.Uuid
+  customerName    String        @map("customer_name")
+  customerPhone   String?       @map("customer_phone")
+  address         String?
+  notes           String?
+  paymentMethod   PaymentMethod @map("payment_method")
+  paidAt          DateTime?     @map("paid_at") @db.Timestamptz(3)
+  /// Suma de las líneas: con el peso real si ya se pesó, si no con lo pedido.
+  subtotal        Int
+  deliveryFee     Int           @default(0) @map("delivery_fee")
+  total           Int
+  /// SHA-256 de la clave con la que el cliente de la tienda en línea sigue su pedido.
+  trackingKeyHash String?       @map("tracking_key_hash")
+  createdById     String?       @map("created_by_id") @db.Uuid
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  preparingAt     DateTime?     @map("preparing_at") @db.Timestamptz(3)
+  readyAt         DateTime?     @map("ready_at") @db.Timestamptz(3)
+  /// Momento de la venta: sale de la pesquera y se descuenta del inventario.
+  dispatchedAt    DateTime?     @map("dispatched_at") @db.Timestamptz(3)
+  deliveredAt     DateTime?     @map("delivered_at") @db.Timestamptz(3)
+  cancelledAt     DateTime?     @map("cancelled_at") @db.Timestamptz(3)
+  cancelReason    String?       @map("cancel_reason")
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  customer  Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy User?               @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  items     OrderItem[]
+  events    OrderEvent[]
+  movements InventoryMovement[]
+
+  @@index([status])
+  @@index([dispatchedAt])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id             String  @id @default(uuid(7)) @db.Uuid
+  orderId        String  @map("order_id") @db.Uuid
+  productId      String  @map("product_id") @db.Uuid
+  productName    String  @map("product_name")
+  unit           Unit
+  unitPrice      Int     @map("unit_price")
+  /// Lo que pidió el cliente (milésimas).
+  qtyMilli       Int     @map("qty_milli")
+  /// Peso o cantidad real al alistar (milésimas). Si es null se despacha lo pedido.
+  actualQtyMilli Int?    @map("actual_qty_milli")
+  lineTotal      Int     @map("line_total")
+  /// Indicaciones: «limpio», «en filete», «sin cabeza»…
+  note           String?
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+/// Historial de cada pedido (quién lo movió y cuándo). Alimenta la actividad en vivo.
+model OrderEvent {
+  id        String      @id @default(uuid(7)) @db.Uuid
+  orderId   String      @map("order_id") @db.Uuid
+  status    OrderStatus
+  userId    String?     @map("user_id") @db.Uuid
+  note      String?
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("order_events")
+}

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Entrar · Marea</title>
+    <link rel="stylesheet" href="/css/app.css" />
+    <script type="module" src="/js/login.js"></script>
+  </head>
+  <body>
+    <div class="auth">
+      <section class="auth-art" aria-hidden="true">
+        <canvas id="waves"></canvas>
+        <div class="row"><span class="brand-mark" id="mark"></span><strong>Marea</strong></div>
+        <div>
+          <h1>Del muelle al cliente, todo en vivo.</h1>
+          <p>Pedidos, despacho, inventario por kilo y ventas del día de la pesquera en una sola pantalla.</p>
+        </div>
+      </section>
+      <section class="auth-form">
+        <form id="login" class="stack" novalidate>
+          <div>
+            <h2>Entrar al panel</h2>
+            <p class="muted" id="business"></p>
+          </div>
+          <label class="field"><span>Correo</span><input class="input" name="email" type="email" autocomplete="username" required /></label>
+          <label class="field"><span>Contraseña</span><input class="input" name="password" type="password" autocomplete="current-password" required /></label>
+          <div class="error-box" id="error" hidden></div>
+          <button class="btn btn-primary btn-lg" type="submit">Entrar</button>
+          <a class="muted" href="/tienda">Ir a la tienda en línea</a>
+        </form>
+      </section>
+    </div>
+  </body>
+</html>

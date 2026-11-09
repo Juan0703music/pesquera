@@ -1,0 +1,227 @@
+/* Tienda en línea de la pesquera (usa los tokens de app.css). */
+.store-hero {
+  background: #071e27;
+  color: #e8f6f9;
+  padding: 28px 0 22px;
+  position: relative;
+  overflow: hidden;
+}
+.store-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 26px;
+  background: radial-gradient(18px 10px at 18px 0, transparent 98%, var(--page) 100%) 0 0 / 36px 26px repeat-x;
+  opacity: 1;
+}
+.wrap {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+}
+.store-hero h1 {
+  font-size: clamp(26px, 4vw, 38px);
+  letter-spacing: -0.03em;
+}
+.store-hero p {
+  color: #a9cdd6;
+  margin: 6px 0 0;
+}
+.store-hero .row {
+  margin-top: 12px;
+}
+.store-hero .badge {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e8f6f9;
+}
+.store-hero .badge-good {
+  background: rgba(12, 163, 12, 0.22);
+  color: #b9f5b9;
+}
+.store-hero .badge-critical {
+  background: rgba(208, 59, 59, 0.3);
+  color: #ffd2d2;
+}
+.store-hero a {
+  color: #8fe3f2;
+}
+.store-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+  align-items: start;
+  padding: 18px 0 120px;
+}
+.chips {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 10px 0;
+  background: var(--page);
+}
+.chips a {
+  flex: none;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 13px;
+}
+.category h2 {
+  font-size: 19px;
+  margin: 18px 0 10px;
+  scroll-margin-top: 60px;
+}
+.products {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+.product {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+.product-art {
+  height: 96px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  color: var(--brand);
+}
+.product-art .icon {
+  width: 54px;
+  height: 54px;
+  stroke-width: 1.3;
+}
+.product h3 {
+  font-size: 15px;
+}
+.product p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  flex: 1;
+}
+.price {
+  font-weight: 750;
+  font-size: 16px;
+}
+.price small {
+  font-weight: 500;
+  color: var(--muted);
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stepper output {
+  min-width: 64px;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.product.is-out {
+  opacity: 0.6;
+}
+.cart {
+  position: sticky;
+  top: 12px;
+}
+.cart-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 46vh;
+  overflow: auto;
+}
+.cart-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  font-size: 13px;
+}
+.cart-line .muted {
+  font-size: 12px;
+}
+.cart-bar {
+  display: none;
+}
+.steps {
+  list-style: none;
+  margin: 18px 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+.steps li {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.steps li::before {
+  content: "";
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+  background: var(--surface-3);
+}
+.steps li.done {
+  color: var(--ink);
+}
+.steps li.done::before {
+  background: var(--brand);
+}
+.steps li.current::before {
+  background: var(--brand);
+  animation: pulse-bar 1.6s ease-in-out infinite;
+}
+@keyframes pulse-bar {
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (max-width: 900px) {
+  .store-layout {
+    grid-template-columns: 1fr;
+  }
+  .cart {
+    display: none;
+  }
+  .cart-bar {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: var(--ink);
+    color: var(--page);
+    box-shadow: var(--shadow-lg);
+  }
+  .cart-bar .spacer {
+    flex: 1;
+  }
+  .steps {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+[data-checkout] {
+  width: 100%;
+  margin-top: 12px;
+}

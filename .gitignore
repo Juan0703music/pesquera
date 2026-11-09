@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+
+# Cliente generado por Prisma
+src/generated/
+
+# PostgreSQL embebido para desarrollo local
+.pgdata/
+
+*.log
+.DS_Store
+backups/

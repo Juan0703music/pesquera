@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inventario</title>
+    <link rel="stylesheet" href="/css/app.css" />
+    <script src="/socket.io/socket.io.min.js" defer></script>
+    <script type="module" src="/js/inventario.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar"></aside>
+      <main class="main">
+        <div class="page-head">
+          <div>
+            <h1>Inventario</h1>
+            <div class="sub">Existencia física, lo comprometido en pedidos abiertos y lo disponible para vender.</div>
+          </div>
+          <span class="live-pill" id="live-pill" data-state="connecting"><span class="live-dot"></span><span>Conectando…</span></span>
+          <div class="spacer"></div>
+          <button class="btn" id="btn-category" hidden></button>
+          <button class="btn btn-primary" id="btn-product" hidden></button>
+        </div>
+        <div class="stats stats-4" id="stats"></div>
+        <div class="toolbar">
+          <label class="search"><span class="sr-only">Buscar producto</span><input class="input" id="search" type="search" placeholder="Buscar producto" autocomplete="off" /></label>
+          <label><span class="sr-only">Categoría</span><select class="input input-inline" id="filter-category"><option value="">Todas las categorías</option></select></label>
+          <div class="segmented" role="radiogroup" aria-label="Nivel">
+            <label><input type="radio" name="filter-level" value="" checked /><span>Todos</span></label>
+            <label><input type="radio" name="filter-level" value="ALERT" /><span>Con alerta</span></label>
+          </div>
+          <label class="check" id="show-inactive-wrap" hidden><input type="checkbox" id="show-inactive" /> Ver inactivos</label>
+        </div>
+        <section class="card">
+          <div class="table-wrap" id="table"></div>
+        </section>
+        <section class="card closed-today">
+          <div class="card-head"><h2 id="kardex-title">Movimientos recientes</h2><div class="spacer"></div><button class="btn btn-sm btn-ghost" id="kardex-all" hidden>Ver todos</button></div>
+          <div class="card-body table-wrap" id="kardex"></div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="move-dialog" aria-labelledby="move-title">
+      <form class="modal" id="move-form" novalidate>
+        <div class="modal-head"><h2 id="move-title">Movimiento</h2><div class="spacer"></div><button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar"></button></div>
+        <div class="modal-body stack">
+          <div class="segmented" role="radiogroup" aria-label="Tipo de movimiento">
+            <label><input type="radio" name="type" value="ENTRADA" checked /><span>Entrada de mercancía</span></label>
+            <label><input type="radio" name="type" value="AJUSTE" /><span>Conteo físico</span></label>
+            <label><input type="radio" name="type" value="MERMA" /><span>Merma</span></label>
+          </div>
+          <p class="muted" id="move-help"></p>
+          <div class="grid-2">
+            <label class="field" data-for="ENTRADA MERMA"><span id="qty-label">Cantidad</span><input class="input num" name="qty" inputmode="decimal" /></label>
+            <label class="field" data-for="AJUSTE"><span id="counted-label">Cantidad contada</span><input class="input num" name="counted" inputmode="decimal" /></label>
+            <label class="field" data-for="ENTRADA"><span id="cost-label">Costo</span><input class="input num" name="unitCost" inputmode="numeric" placeholder="Opcional" /></label>
+          </div>
+          <label class="field" data-for="ENTRADA"><span>Proveedor o lancha</span><input class="input" name="supplier" maxlength="80" placeholder="Lancha La Esperanza" /></label>
+          <label class="field"><span id="note-label">Nota</span><input class="input" name="note" maxlength="200" /></label>
+          <div class="error-box" id="move-error" hidden></div>
+        </div>
+        <div class="modal-foot"><div class="spacer"></div><button type="button" class="btn" data-close>Cancelar</button><button type="submit" class="btn btn-primary">Guardar</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="product-dialog" aria-labelledby="product-title">
+      <form class="modal" id="product-form" novalidate>
+        <div class="modal-head"><h2 id="product-title">Producto</h2><div class="spacer"></div><button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar"></button></div>
+        <div class="modal-body stack">
+          <div class="grid-2">
+            <label class="field"><span>Nombre</span><input class="input" name="name" required maxlength="80" /></label>
+            <label class="field"><span>Categoría</span><select class="input" name="categoryId"></select></label>
+          </div>
+          <div class="field"><span class="label">Se vende</span>
+            <div class="segmented" role="radiogroup" aria-label="Unidad de venta">
+              <label><input type="radio" name="unit" value="KG" checked /><span>Por kilo</span></label>
+              <label><input type="radio" name="unit" value="UNIDAD" /><span>Por unidad</span></label>
+            </div>
+          </div>
+          <div class="grid-2">
+            <label class="field"><span id="price-label">Precio por kilo</span><input class="input num" name="price" inputmode="numeric" required /></label>
+            <label class="field"><span id="min-label">Alerta de stock bajo (kg)</span><input class="input num" name="minStock" inputmode="decimal" /></label>
+          </div>
+          <label class="field"><span>Descripción (se ve en la tienda)</span><textarea class="input" name="description" maxlength="300"></textarea></label>
+          <div class="row"><label class="check"><input type="checkbox" name="active" checked /> Activo</label><label class="check"><input type="checkbox" name="inStore" checked /> Visible en la tienda en línea</label></div>
+          <div class="error-box" id="product-error" hidden></div>
+        </div>
+        <div class="modal-foot"><div class="spacer"></div><button type="button" class="btn" data-close>Cancelar</button><button type="submit" class="btn btn-primary">Guardar producto</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="category-dialog" aria-labelledby="category-title">
+      <form class="modal" id="category-form" novalidate>
+        <div class="modal-head"><h2 id="category-title">Nueva categoría</h2><div class="spacer"></div><button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar"></button></div>
+        <div class="modal-body stack"><label class="field"><span>Nombre</span><input class="input" name="name" required maxlength="40" placeholder="Congelados" /></label><div class="error-box" id="category-error" hidden></div></div>
+        <div class="modal-foot"><div class="spacer"></div><button type="button" class="btn" data-close>Cancelar</button><button type="submit" class="btn btn-primary">Crear</button></div>
+      </form>
+    </dialog>
+  </body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ventas del día</title>
+    <link rel="stylesheet" href="/css/app.css" />
+    <script src="/socket.io/socket.io.min.js" defer></script>
+    <script type="module" src="/js/ventas.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar"></aside>
+      <main class="main">
+        <div class="page-head">
+          <div>
+            <h1>Ventas del día</h1>
+            <div class="sub" id="day-label">Cargando…</div>
+          </div>
+          <span class="live-pill" id="live-pill" data-state="connecting"><span class="live-dot"></span><span>Conectando…</span></span>
+          <div class="spacer"></div>
+          <div class="row no-print">
+            <button class="btn btn-icon" id="prev" aria-label="Día anterior"></button>
+            <label><span class="sr-only">Fecha</span><input class="input input-inline" type="date" id="date" /></label>
+            <button class="btn btn-icon" id="next" aria-label="Día siguiente"></button>
+            <button class="btn" id="today">Hoy</button>
+            <button class="btn" id="print"></button>
+          </div>
+        </div>
+        <div class="stats stats-4" id="stats"></div>
+        <div class="dash">
+          <section class="card">
+            <div class="card-head"><h2>Ventas</h2><div class="spacer"></div><span class="muted" id="sales-count"></span></div>
+            <div class="card-body table-wrap" id="sales"></div>
+          </section>
+          <div class="side-stack">
+            <section class="card">
+              <div class="card-head"><h2>Cierre de caja</h2></div>
+              <div class="card-body" id="closing"></div>
+            </section>
+            <section class="card">
+              <div class="card-head"><h2>Productos más vendidos</h2></div>
+              <div class="card-body"><div class="rank" id="top"></div></div>
+            </section>
+            <section class="card">
+              <div class="card-head"><h2>Por origen</h2></div>
+              <div class="card-body"><div class="rank" id="sources"></div></div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
