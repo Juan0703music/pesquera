@@ -92,6 +92,15 @@ const CUSTOMERS = [
   ["Restaurante Sabor Sinú", "3112223344", "Calle 18 # 21-14"],
 ] as const;
 
+/** Cómo puede pedir el cliente cada producto de la demostración. */
+export function cutsFor(category: string, name: string): string[] {
+  if (category === "Pescados") return ["Entero", "Limpio", "Sin cabeza", "En postas", "En filete"];
+  if (/Camarón|Langostino/.test(name)) return ["Entero", "Pelado", "Pelado y desvenado"];
+  if (name === "Calamar") return ["Entero", "En anillos"];
+  if (name === "Pulpo") return ["Entero", "Limpio"];
+  return [];
+}
+
 const SUPPLIERS = ["Lancha La Esperanza", "Asociación de Pescadores de Tolú", "Acuícola del Sinú", "Distribuidora Mar Caribe"];
 
 // Generador pseudoaleatorio con semilla: la demostración sale igual cada vez.
@@ -146,7 +155,7 @@ async function main() {
       whatsapp: "573004567890",
       address: "Calle 15 # 12-30, Tolú, Sucre",
       storeOpen: true,
-      deliveryFee: 5000,
+      deliveryFee: 0,
       minOrderTotal: 20000,
     },
     update: {},
@@ -168,7 +177,7 @@ async function main() {
       const created = await prisma.product.create({
         data: {
           name: product.name, description: product.description, unit: product.unit, price: product.price,
-          minStockMilli: product.min * 1000, categoryId: category.id,
+          minStockMilli: product.min * 1000, categoryId: category.id, cutOptions: cutsFor(group.category, product.name),
         },
       });
       products.push({ ...product, id: created.id, categoryId: category.id, stock: 0, avgCost: product.cost });
@@ -226,13 +235,14 @@ async function main() {
       const isBusiness = rand() < 0.35;
       const customer = rand() < 0.7 ? pick(customers) : null;
       const source: OrderSource = weighted([["MOSTRADOR", 42], ["WHATSAPP", 26], ["TELEFONO", 17], ["WEB", 15]]);
-      const deliveryType: DeliveryType = source === "MOSTRADOR" ? "RECOGE" : rand() < 0.65 ? "DOMICILIO" : "RECOGE";
+      // La pesquera no hace domicilios: todos los pedidos se recogen en el local.
+      const deliveryType: DeliveryType = "RECOGE";
       const paymentMethod: PaymentMethod = weighted([["EFECTIVO", 40], ["NEQUI", 25], ["TRANSFERENCIA", 15], ["DATAFONO", 12], ["CREDITO", isBusiness ? 25 : 3]]);
 
       // Pedidos de hoy aún en curso: los más recientes siguen abiertos.
       let status: OrderStatus = "ENTREGADO";
       if (isToday && minutesAgo < 75 && source !== "MOSTRADOR") {
-        status = minutesAgo < 12 ? "RECIBIDO" : minutesAgo < 25 ? "ALISTANDO" : minutesAgo < 40 ? "LISTO" : deliveryType === "DOMICILIO" ? "DESPACHADO" : "ENTREGADO";
+        status = minutesAgo < 12 ? "RECIBIDO" : minutesAgo < 25 ? "ALISTANDO" : minutesAgo < 40 ? "LISTO" : "ENTREGADO";
       }
       if (!isToday && rand() < 0.03) status = "CANCELADO";
 
@@ -263,19 +273,19 @@ async function main() {
       });
 
       const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
-      const deliveryFee = deliveryType === "DOMICILIO" ? 5000 : 0;
+      const deliveryFee = 0;
       const preparingAt = status === "RECIBIDO" ? null : plusMinutes(createdAt, 3 + rand() * 6);
-      const readyAt = ["LISTO", "DESPACHADO", "ENTREGADO"].includes(status) ? plusMinutes(createdAt, 10 + rand() * 12) : null;
-      const leaves = status === "DESPACHADO" || status === "ENTREGADO";
+      const readyAt = ["LISTO", "ENTREGADO"].includes(status) ? plusMinutes(createdAt, 10 + rand() * 12) : null;
+      const leaves = status === "ENTREGADO";
       const dispatchedAt = leaves ? (source === "MOSTRADOR" ? plusMinutes(createdAt, 4 + rand() * 6) : plusMinutes(createdAt, 18 + rand() * 20)) : null;
-      const deliveredAt = status === "ENTREGADO" ? (deliveryType === "DOMICILIO" ? plusMinutes(dispatchedAt!, 12 + rand() * 25) : dispatchedAt) : null;
+      const deliveredAt = status === "ENTREGADO" ? dispatchedAt : null;
       const creator = source === "WEB" ? null : pick([ventas.id, ventas.id, admin.id]);
       const name = customer?.name ?? pick(["Cliente de mostrador", "Señora Carmen", "Don Álvaro", "Cliente ocasional", "Yuranis", "Ledys", "Don Manuel"]);
       const paid = status !== "CANCELADO" && paymentMethod !== "CREDITO" && (leaves || rand() < 0.3);
 
       orders.push({
         id: orderId, source, status, deliveryType, customerId: customer?.id ?? null, customerName: name,
-        customerPhone: customer?.phone ?? null, address: deliveryType === "DOMICILIO" ? (customer?.address ?? "Barrio Centro, Calle 14 # 10-21") : null,
+        customerPhone: customer?.phone ?? null, address: null,
         notes: index % 9 === 0 ? "Llamar al llegar" : null, paymentMethod, paidAt: paid ? (dispatchedAt ?? createdAt) : null,
         subtotal, deliveryFee, total: subtotal + deliveryFee, createdById: creator, createdAt, preparingAt, readyAt, dispatchedAt, deliveredAt,
         cancelledAt: status === "CANCELADO" ? plusMinutes(createdAt, 8) : null, cancelReason: status === "CANCELADO" ? "El cliente ya no lo necesita" : null,
@@ -295,8 +305,7 @@ async function main() {
         ["RECIBIDO", createdAt, creator],
         ["ALISTANDO", preparingAt, despacho.id],
         ["LISTO", readyAt, despacho.id],
-        [deliveryType === "DOMICILIO" ? "DESPACHADO" : "ENTREGADO", dispatchedAt, despacho.id],
-        ...(deliveryType === "DOMICILIO" ? [["ENTREGADO", deliveredAt, despacho.id] as [OrderStatus, Date | null, string | null]] : []),
+        ["ENTREGADO", dispatchedAt, despacho.id],
         ["CANCELADO", status === "CANCELADO" ? plusMinutes(createdAt, 8) : null, ventas.id],
       ];
       for (const [eventStatus, when, userId] of timeline) {
@@ -346,17 +355,17 @@ async function main() {
   const asUser = (user: typeof admin) => ({ userId: user.id, sessionId: "seed", name: user.name, role: user.role });
   const byName = (name: string) => products.find((product) => product.name === name)!.id;
   const open = [
-    { customer: customers[0]!, source: "WHATSAPP", delivery: "DOMICILIO", items: [["Mojarra roja", 6], ["Camarón tití", 2]], to: "DESPACHADO" },
-    { customer: customers[3]!, source: "TELEFONO", delivery: "DOMICILIO", items: [["Filete de basa", 5], ["Bolsa de hielo 5 kg", 4]], to: "LISTO" },
-    { customer: customers[2]!, source: "WHATSAPP", delivery: "RECOGE", items: [["Pargo rojo", 1.5]], to: "ALISTANDO" },
-    { customer: customers[5]!, source: "TELEFONO", delivery: "DOMICILIO", items: [["Calamar", 3], ["Camarón tití", 2.5], ["Salsa tártara 250 g", 2]], to: null },
-    { customer: customers[6]!, source: "WHATSAPP", delivery: "RECOGE", items: [["Sierra", 2], ["Bocachico", 3]], to: null },
+    { customer: customers[0]!, source: "WHATSAPP", items: [["Mojarra roja", 6], ["Camarón tití", 2]], to: "LISTO" },
+    { customer: customers[3]!, source: "TELEFONO", items: [["Filete de basa", 5], ["Bolsa de hielo 5 kg", 4]], to: "LISTO" },
+    { customer: customers[2]!, source: "WHATSAPP", items: [["Pargo rojo", 1.5]], to: "ALISTANDO" },
+    { customer: customers[5]!, source: "TELEFONO", items: [["Calamar", 3], ["Camarón tití", 2.5], ["Salsa tártara 250 g", 2]], to: null },
+    { customer: customers[6]!, source: "WHATSAPP", items: [["Sierra", 2], ["Bocachico", 3]], to: null },
   ] as const;
   for (const entry of open) {
     const { order } = await ordersService.create(
       {
-        source: entry.source, deliveryType: entry.delivery, paymentMethod: "EFECTIVO", paid: false, completeNow: false,
-        customer: { name: entry.customer.name, phone: entry.customer.phone, address: entry.customer.address ?? undefined },
+        source: entry.source, paymentMethod: "EFECTIVO", paid: false, completeNow: false,
+        customer: { name: entry.customer.name, phone: entry.customer.phone },
         items: entry.items.map(([name, qty]) => ({ productId: byName(name), qty })),
       },
       asUser(ventas),
@@ -368,7 +377,6 @@ async function main() {
         asUser(despacho),
       );
       if (entry.to !== "ALISTANDO") await ordersService.changeStatus(weighed.id, "LISTO", asUser(despacho));
-      if (entry.to === "DESPACHADO") await ordersService.changeStatus(weighed.id, "DESPACHADO", asUser(despacho));
     }
   }
 

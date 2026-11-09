@@ -2,69 +2,96 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Tienda</title>
-    <meta name="description" content="Pescado y mariscos frescos a domicilio. Pide en línea." />
+    <meta name="description" content="Pescado y mariscos frescos. Pide en línea y recoge en la pesquera." />
     <script src="/js/theme.js"></script>
     <link rel="stylesheet" href="/css/app.css" />
     <link rel="stylesheet" href="/css/tienda.css" />
     <script type="module" src="/js/tienda.js"></script>
   </head>
-  <body>
-    <header class="store-hero">
-      <div class="store-theme" id="theme"></div>
-      <div class="wrap">
-        <h1 id="store-name">Pesquera</h1>
-        <p id="store-tagline">Pescado y mariscos frescos. Pide aquí y te avisamos cuando esté listo.</p>
-        <div class="row" id="store-meta"></div>
+  <body class="shop">
+    <header class="shop-head">
+      <div class="wrap shop-head-inner">
+        <div class="shop-title">
+          <h1 id="store-name">Pesquera</h1>
+          <div class="shop-meta" id="store-meta"></div>
+        </div>
+        <div id="theme"></div>
       </div>
     </header>
-    <div class="wrap">
-      <nav class="chips" id="chips" aria-label="Categorías"></nav>
-      <div class="store-layout">
-        <main id="catalog"><div class="empty">Cargando productos…</div></main>
+
+    <main class="wrap shop-main">
+      <section class="pizarra" id="board" aria-labelledby="board-title">
+        <div class="board-head">
+          <h2 id="board-title">Fresco de hoy</h2>
+          <span class="board-date" id="board-date"></span>
+        </div>
+        <p class="board-note" id="board-note" hidden></p>
+        <div class="board-body">
+          <div class="board-cards" id="board-cards"></div>
+          <div class="board-prices">
+            <h3>Precios de hoy</h3>
+            <ul class="price-list" id="price-list"></ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="repeat" id="repeat" hidden aria-label="Tu último pedido"></section>
+
+      <div class="shop-layout">
+        <div class="shop-catalog">
+          <div class="shop-tools" id="tools">
+            <label class="shop-search"><span class="sr-only">Buscar producto</span><input class="input" id="search" type="search" placeholder="Buscar: pargo, camarón, filete…" autocomplete="off" /></label>
+            <nav class="chips" id="chips" aria-label="Categorías"></nav>
+          </div>
+          <div id="catalog"><div class="empty">Cargando productos…</div></div>
+        </div>
         <aside class="card cart" aria-labelledby="cart-title">
           <div class="card-head"><h2 id="cart-title">Tu pedido</h2></div>
           <div class="card-body" id="cart"></div>
         </aside>
       </div>
-    </div>
+    </main>
+
     <div class="cart-bar" id="cart-bar" hidden>
-      <span id="cart-bar-text"></span><span class="spacer"></span>
+      <span class="cart-bar-count" id="cart-bar-count"></span>
+      <span class="cart-bar-total"><small>Total estimado</small><strong id="cart-bar-total"></strong></span>
       <button class="btn btn-primary" id="cart-bar-open">Ver pedido</button>
     </div>
 
-    <dialog id="checkout" aria-labelledby="checkout-title">
-      <form class="modal" id="checkout-form" novalidate>
+    <dialog id="sheet" class="sheet-dialog" aria-labelledby="sheet-title">
+      <form class="sheet" id="sheet-form" novalidate></form>
+    </dialog>
+
+    <dialog id="cart-dialog" class="sheet-dialog" aria-labelledby="cart-dialog-title">
+      <div class="sheet">
+        <div class="modal-head"><h2 id="cart-dialog-title">Tu pedido</h2><div class="spacer"></div><button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar"></button></div>
+        <div class="modal-body" id="cart-mobile"></div>
+      </div>
+    </dialog>
+
+    <dialog id="checkout" class="sheet-dialog" aria-labelledby="checkout-title">
+      <form class="sheet" id="checkout-form" novalidate>
         <div class="modal-head"><h2 id="checkout-title">Confirmar pedido</h2><div class="spacer"></div><button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar"></button></div>
         <div class="modal-body stack">
+          <div class="pickup" id="pickup"></div>
           <div id="checkout-summary"></div>
-          <div class="segmented" role="radiogroup" aria-label="Entrega">
-            <label><input type="radio" name="deliveryType" value="DOMICILIO" checked /><span>A domicilio</span></label>
-            <label><input type="radio" name="deliveryType" value="RECOGE" /><span>Paso a recoger</span></label>
-          </div>
           <div class="grid-2">
-            <label class="field"><span>Nombre</span><input class="input" name="customer.name" autocomplete="name" required maxlength="80" /></label>
+            <label class="field"><span>Tu nombre</span><input class="input" name="customer.name" autocomplete="name" required maxlength="80" /></label>
             <label class="field"><span>Celular</span><input class="input" name="customer.phone" inputmode="tel" autocomplete="tel" required placeholder="300 123 4567" /></label>
           </div>
-          <label class="field" id="address-field"><span>Dirección</span><input class="input" name="customer.address" autocomplete="street-address" maxlength="200" placeholder="Barrio, calle, número, referencia" /></label>
           <label class="field"><span>Forma de pago</span>
-            <select class="input" name="paymentMethod"><option value="EFECTIVO">Efectivo al recibir</option><option value="NEQUI">Nequi</option><option value="TRANSFERENCIA">Transferencia bancaria</option><option value="DATAFONO">Datáfono al recibir</option></select>
+            <select class="input" name="paymentMethod"><option value="EFECTIVO">Efectivo al recoger</option></select>
           </label>
           <div class="pay-info-box" id="pay-info" hidden></div>
-          <label class="field"><span>Indicaciones (opcional)</span><input class="input" name="notes" maxlength="300" placeholder="Limpio, en postas, sin cabeza…" /></label>
+          <label class="field"><span>Indicaciones (opcional)</span><input class="input" name="notes" maxlength="300" placeholder="Hora en que pasas, a nombre de quién…" /></label>
           <input class="sr-only" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
-          <p class="muted">Los productos por kilo se pesan al alistar: el total final puede variar un poco según el peso real.</p>
+          <p class="muted">Lo que va por kilo se pesa al alistar: pagas lo que pese, y te avisamos el valor exacto en el seguimiento del pedido.</p>
           <div class="error-box" id="checkout-error" hidden></div>
         </div>
         <div class="modal-foot"><div class="spacer"></div><button type="button" class="btn" data-close>Seguir comprando</button><button type="submit" class="btn btn-primary btn-lg" id="place">Hacer pedido</button></div>
       </form>
-    </dialog>
-    <dialog id="cart-dialog" aria-labelledby="cart-dialog-title">
-      <div class="modal">
-        <div class="modal-head"><h2 id="cart-dialog-title">Tu pedido</h2><div class="spacer"></div><button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar"></button></div>
-        <div class="modal-body" id="cart-mobile"></div>
-      </div>
     </dialog>
   </body>
 </html>

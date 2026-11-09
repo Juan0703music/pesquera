@@ -4,6 +4,9 @@ import { prisma } from "../../config/database.js";
 import { storeOrderLimiter, trackingLimiter } from "../../middlewares/rateLimiter.js";
 import { validate } from "../../middlewares/validate.js";
 import { badRequest } from "../../utils/errors.js";
+import { env } from "../../config/env.js";
+import { dayRange, todayIn } from "../sales/sales.service.js";
+import { photoUrls } from "../catalog/photos.js";
 import { committedByProduct } from "../inventory/stock.js";
 import { StoreOrderSchema, type StoreOrderInput } from "../orders/orders.schemas.js";
 import { ordersService } from "../orders/orders.service.js";
@@ -18,35 +21,65 @@ const IdParams = z.object({ id: z.uuid("Identificador inválido.") });
  */
 export const storeRoutes = Router();
 
+/** Pedidos en los que aparece cada producto (últimos 14 días): «lo más pedido» cuando hoy no ha llegado nada. */
+async function popularity(since: Date) {
+  const rows = await prisma.$queryRaw<{ product_id: string; orders: number }[]>`
+    SELECT oi.product_id, COUNT(DISTINCT oi.order_id)::int AS orders
+    FROM order_items oi JOIN orders o ON o.id = oi.order_id
+    WHERE o.status IN ('DESPACHADO', 'ENTREGADO') AND o.dispatched_at >= ${since}
+    GROUP BY oi.product_id`;
+  return new Map(rows.map((row) => [row.product_id, row.orders]));
+}
+
 storeRoutes.get("/", async (_req, res) => {
-  const [settings, categories, committed, payment] = await Promise.all([
+  const today = dayRange(todayIn());
+  const [settings, categories, committed, payment, arrivals, popular] = await Promise.all([
     getSettings(),
     prisma.category.findMany({
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      include: { products: { where: { active: true, inStore: true }, orderBy: { name: "asc" } } },
+      include: {
+        products: {
+          where: { active: true, inStore: true },
+          orderBy: { name: "asc" },
+          include: { photo: { select: { updatedAt: true } } },
+        },
+      },
     }),
     committedByProduct(prisma),
     paymentAccountsService.forStore(),
+    // Lo que llegó hoy (entradas de mercancía desde la medianoche, hora de Colombia).
+    prisma.inventoryMovement.groupBy({ by: ["productId"], where: { type: "ENTRADA", createdAt: { gte: today.start, lt: today.end } }, _max: { createdAt: true } }),
+    popularity(new Date(today.start.getTime() - 14 * 86_400_000)),
   ]);
+  const arrivedAt = new Map(arrivals.map((row) => [row.productId, row._max.createdAt]));
   res.set("Cache-Control", "no-store").json({
     data: {
       // Cuentas para pagar por transferencia (llave Bre-B, Nequi, Daviplata, banco) y cuáles van con cada forma de pago.
       payment,
       business: {
         name: settings.businessName, phone: settings.phone, whatsapp: settings.whatsapp, address: settings.address,
-        open: settings.storeOpen, deliveryFee: settings.deliveryFee, minOrderTotal: settings.minOrderTotal,
+        open: settings.storeOpen, minOrderTotal: settings.minOrderTotal, timeZone: env.TIME_ZONE,
       },
+      today: todayIn(),
       categories: categories
         .filter((category) => category.products.length > 0)
         .map((category) => ({
           id: category.id,
           name: category.name,
           products: category.products.map((product) => {
+            const step = product.unit === "KG" ? 250 : 1000;
             const availableMilli = Math.max(0, product.stockMilli - (committed.get(product.id) ?? 0));
+            const available = availableMilli >= step;
             return {
               id: product.id, name: product.name, description: product.description, unit: product.unit, price: product.price,
-              available: availableMilli >= (product.unit === "KG" ? 250 : 1000),
-              maxQty: Math.floor(availableMilli / (product.unit === "KG" ? 250 : 1000)) * (product.unit === "KG" ? 0.25 : 1),
+              available,
+              maxQty: Math.floor(availableMilli / step) * (step / 1000),
+              // «Quedan pocos»: bajo el mínimo de la bodega o menos de tres pasos (¾ kg o 3 unidades).
+              fewLeft: available && (availableMilli <= product.minStockMilli || availableMilli < step * 3),
+              arrivedAt: arrivedAt.get(product.id) ?? null,
+              cutOptions: product.cutOptions,
+              photo: photoUrls(product),
+              popularity: popular.get(product.id) ?? 0,
             };
           }),
         })),

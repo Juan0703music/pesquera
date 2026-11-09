@@ -40,7 +40,7 @@ function render() {
     <thead><tr><th>Producto</th><th class="right">Existencia</th><th class="right">Comprometido</th><th class="right">Disponible</th><th class="right">Mínimo</th><th>Nivel</th><th class="right">Precio</th>${showCost ? '<th class="right">Costo prom.</th><th class="right">Valor</th>' : ""}<th></th></tr></thead>
     <tbody>${products.map((product) => `
       <tr>
-        <td class="product-cell"><strong>${esc(product.name)}</strong>${product.active ? "" : ' <span class="badge">Inactivo</span>'}${product.inStore ? "" : ' <span class="badge" title="No se muestra en la tienda en línea">Solo local</span>'}<br><span class="muted">${esc(product.category.name)} · por ${product.unit === "KG" ? "kilo" : "unidad"}</span></td>
+        <td class="product-cell"><div class="product-line"><span class="thumb">${product.photo ? `<img src="${product.photo.small}" alt="" loading="lazy" />` : icon("fish")}</span><span><strong>${esc(product.name)}</strong>${product.active ? "" : ' <span class="badge">Inactivo</span>'}${product.inStore ? "" : ' <span class="badge" title="No se muestra en la tienda en línea">Solo local</span>'}<br><span class="muted">${esc(product.category.name)} · por ${product.unit === "KG" ? "kilo" : "unidad"}</span></span></div></td>
         <td class="right num"><strong>${fmt.qty(product.stockMilli, product.unit)}</strong></td>
         <td class="right num">${product.committedMilli ? fmt.qty(product.committedMilli, product.unit) : '<span class="muted">—</span>'}</td>
         <td class="right num">${product.availableMilli < 0 ? `<span class="badge badge-critical">${fmt.qty(product.availableMilli, product.unit)}</span>` : fmt.qty(product.availableMilli, product.unit)}</td>
@@ -158,6 +158,29 @@ async function submitMove(event) {
 }
 
 /* ───────────── Productos y categorías ───────────── */
+/** Cortes que más se usan en una pesquera (se activan de un toque). */
+const CUT_SUGGESTIONS = ["Entero", "Limpio", "Sin cabeza", "En postas", "En filete", "Mariposa", "Pelado", "Pelado y desvenado"];
+const photoState = { file: null, remove: false, url: null };
+
+function renderCuts(selected) {
+  const options = [...new Set([...CUT_SUGGESTIONS, ...selected])];
+  $("#cut-editor").innerHTML = options
+    .map((option) => `<button type="button" class="cut-chip" aria-pressed="${selected.includes(option)}" data-cut="${esc(option)}">${selected.includes(option) ? icon("check", "icon-sm") : ""}${esc(option)}</button>`)
+    .join("");
+}
+const selectedCuts = () => $$("#cut-editor [data-cut]").filter((chip) => chip.getAttribute("aria-pressed") === "true").map((chip) => chip.dataset.cut);
+
+function renderPhoto() {
+  const preview = $("#photo-preview");
+  if (photoState.url && preview.dataset.src !== photoState.url) {
+    preview.innerHTML = `<img src="${photoState.url}" alt="Foto del producto" />`;
+    preview.dataset.src = photoState.url;
+  } else if (!photoState.url) {
+    preview.innerHTML = icon("fish");
+    delete preview.dataset.src;
+  }
+  $("#photo-remove").hidden = !photoState.url;
+}
 function syncProductForm() {
   const form = $("#product-form");
   const kg = form.unit.value === "KG";
@@ -184,6 +207,10 @@ function openProduct(productId) {
     form.active.checked = product.active;
     form.inStore.checked = product.inStore;
   }
+  if (photoState.url?.startsWith("blob:")) URL.revokeObjectURL(photoState.url);
+  Object.assign(photoState, { file: null, remove: false, url: product?.photo?.large ?? null });
+  renderPhoto();
+  renderCuts(product?.cutOptions ?? []);
   syncProductForm();
   openDialog($("#product-dialog"));
   form.name.focus();
@@ -201,10 +228,17 @@ async function submitProduct(event) {
     description: form.description.value.trim(),
     active: form.active.checked,
     inStore: form.inStore.checked,
+    cutOptions: selectedCuts(),
   };
   try {
-    if (state.editing) await api(`/catalog/products/${state.editing.id}`, { method: "PATCH", body });
-    else await api("/catalog/products", { method: "POST", body });
+    const { data } = state.editing ? await api(`/catalog/products/${state.editing.id}`, { method: "PATCH", body }) : await api("/catalog/products", { method: "POST", body });
+    if (photoState.file) {
+      const res = await fetch(`/api/v1/catalog/products/${data.id}/photo`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": photoState.file.type }, body: photoState.file });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) throw new ApiError(res.status, json);
+    } else if (photoState.remove && state.editing?.photo) {
+      await api(`/catalog/products/${data.id}/photo`, { method: "DELETE" });
+    }
     $("#product-dialog").close();
     toast(state.editing ? "Producto actualizado." : "Producto creado. Registra su primera entrada de mercancía.");
     await load();
@@ -254,7 +288,44 @@ if (can("catalog.manage")) {
 }
 $("#move-form").addEventListener("change", (event) => event.target.name === "type" && syncMoveForm());
 $("#move-form").addEventListener("submit", submitMove);
-$("#product-form").addEventListener("change", (event) => event.target.name === "unit" && syncProductForm());
+$("#product-form").addEventListener("change", (event) => {
+  if (event.target.name === "unit") syncProductForm();
+  if (event.target.name === "photo") {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) return toast("Elige una foto en JPG, PNG o WebP.", { error: true });
+    if (file.size > 15 * 1024 * 1024) return toast("La foto pesa más de 15 MB.", { error: true });
+    if (photoState.url?.startsWith("blob:")) URL.revokeObjectURL(photoState.url);
+    Object.assign(photoState, { file, remove: false, url: URL.createObjectURL(file) });
+    renderPhoto();
+  }
+});
+$("#photo-remove").addEventListener("click", () => {
+  if (photoState.url?.startsWith("blob:")) URL.revokeObjectURL(photoState.url);
+  Object.assign(photoState, { file: null, remove: true, url: null });
+  $("#product-form").photo.value = "";
+  renderPhoto();
+});
+$("#cut-editor").addEventListener("click", (event) => {
+  const chip = event.target.closest("[data-cut]");
+  if (!chip) return;
+  const selected = selectedCuts();
+  const option = chip.dataset.cut;
+  renderCuts(selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option]);
+});
+$("#cut-add").addEventListener("click", () => {
+  const input = $("#cut-custom");
+  const value = input.value.trim();
+  if (value.length < 2) return input.focus();
+  renderCuts([...new Set([...selectedCuts(), value])]);
+  input.value = "";
+});
+$("#cut-custom").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    $("#cut-add").click();
+  }
+});
 $("#product-form").addEventListener("submit", submitProduct);
 $("#category-form").addEventListener("submit", submitCategory);
 $("#search").addEventListener("input", render);

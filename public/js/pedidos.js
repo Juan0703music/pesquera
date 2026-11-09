@@ -7,7 +7,6 @@ const COLUMNS = [
   { status: "RECIBIDO", title: "Recibidos", icon: "inbox" },
   { status: "ALISTANDO", title: "Alistando", icon: "scale" },
   { status: "LISTO", title: "Listos", icon: "checkCircle" },
-  { status: "DESPACHADO", title: "En camino", icon: "truck" },
 ];
 /** Minutos a partir de los cuales un pedido abierto se marca como demorado. */
 const LATE_MINUTES = 30;
@@ -18,8 +17,7 @@ const state = { orders: [], products: [], settings: null, lines: [], openId: nul
 function nextAction(order) {
   if (order.status === "RECIBIDO") return { to: "ALISTANDO", label: "Alistar", icon: "scale" };
   if (order.status === "ALISTANDO") return { to: "LISTO", label: "Marcar listo", icon: "check" };
-  if (order.status === "LISTO") return order.deliveryType === "DOMICILIO" ? { to: "DESPACHADO", label: "Despachar", icon: "truck" } : { to: "ENTREGADO", label: "Entregar al cliente", icon: "bag" };
-  if (order.status === "DESPACHADO") return { to: "ENTREGADO", label: "Entregado", icon: "checkCircle" };
+  if (order.status === "LISTO" || order.status === "DESPACHADO") return { to: "ENTREGADO", label: "Entregar al cliente", icon: "bag" };
   return null;
 }
 
@@ -29,14 +27,12 @@ function itemsSummary(order) {
 
 function matchesFilters(order) {
   const query = $("#search").value.trim().toLowerCase();
-  const delivery = $('input[name="filter-delivery"]:checked').value;
-  if (delivery && order.deliveryType !== delivery) return false;
   if (!query) return true;
   return `#${order.number} ${order.customerName} ${order.customerPhone ?? ""} ${order.items.map((item) => item.productName).join(" ")}`.toLowerCase().includes(query);
 }
 
 function card(order) {
-  const late = fmt.minutesSince(order.createdAt) > LATE_MINUTES && order.status !== "DESPACHADO";
+  const late = fmt.minutesSince(order.createdAt) > LATE_MINUTES;
   const action = can("orders.dispatch") ? nextAction(order) : null;
   const unweighed = order.status !== "RECIBIDO" && order.items.some((item) => item.unit === "KG" && item.actualQtyMilli === null);
   return `
@@ -49,7 +45,6 @@ function card(order) {
       <div class="order-customer">${esc(order.customerName)}</div>
       <div class="order-items">${esc(itemsSummary(order))}</div>
       <div class="order-foot">
-        <span class="badge">${icon(order.deliveryType === "DOMICILIO" ? "truck" : "bag")}${LABELS.delivery[order.deliveryType]}</span>
         ${order.paid ? `<span class="badge badge-good">${icon("check")}Pagado</span>` : order.paymentMethod === "CREDITO" ? '<span class="badge badge-warning">Crédito</span>' : ""}
         ${unweighed ? `<span class="badge badge-warning" title="Hay productos por kilo sin pesar">${icon("scale")}Sin pesar</span>` : ""}
         <span class="order-total num">${fmt.cop(order.total)}</span>
@@ -59,10 +54,12 @@ function card(order) {
 }
 
 function renderBoard() {
-  const open = state.orders.filter((order) => COLUMNS.some((column) => column.status === order.status));
+  // Un pedido antiguo que quedó «en camino» se muestra con los listos para entregarlo.
+  const stageOf = (order) => (order.status === "DESPACHADO" ? "LISTO" : order.status);
+  const open = state.orders.filter((order) => COLUMNS.some((column) => column.status === stageOf(order)));
   const visible = open.filter(matchesFilters);
   $("#board").innerHTML = COLUMNS.map((column) => {
-    const orders = visible.filter((order) => order.status === column.status);
+    const orders = visible.filter((order) => stageOf(order) === column.status);
     return `
       <section class="column" data-stage="${column.status}" aria-label="${column.title}">
         <div class="column-head"><span class="stage-dot" aria-hidden="true"></span>${column.title}<span class="badge count">${orders.length}</span></div>
@@ -80,10 +77,9 @@ function renderBoard() {
       </tbody></table>`
     : '<div class="empty">Todavía no se ha cerrado ningún pedido hoy.</div>';
 
-  const counts = Object.fromEntries(COLUMNS.map((column) => [column.status, open.filter((order) => order.status === column.status).length]));
-  const waiting = counts.RECIBIDO + counts.ALISTANDO + counts.LISTO;
+  const waiting = open.length;
   setOpenCount(waiting);
-  $("#board-summary").textContent = `${waiting} por despachar · ${counts.DESPACHADO} en camino · ${closed.filter((order) => order.status === "ENTREGADO").length} entregados hoy`;
+  $("#board-summary").textContent = `${waiting} por entregar · ${closed.filter((order) => order.status === "ENTREGADO").length} entregados hoy`;
   for (const order of state.orders) state.seen.add(order.id);
   state.firstLoad = false;
 }
@@ -142,10 +138,8 @@ async function openDetail(id) {
         <div><strong>${esc(order.customerName)}</strong>${phone ? ` · <a href="tel:+${phone}">${esc(phone.slice(2).replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3"))}</a> · <a href="https://wa.me/${phone}" target="_blank" rel="noopener">WhatsApp</a>` : ""}</div>
         <div class="row">
           <span class="badge">${icon(LABELS.sourceIcon[order.source])}${LABELS.source[order.source]}</span>
-          <span class="badge">${icon(order.deliveryType === "DOMICILIO" ? "truck" : "bag")}${LABELS.delivery[order.deliveryType]}</span>
-          <span class="muted">Recibido ${fmt.dateTime(order.createdAt)}${order.createdByName ? ` por ${esc(order.createdByName)}` : ""}</span>
+            <span class="muted">Recibido ${fmt.dateTime(order.createdAt)}${order.createdByName ? ` por ${esc(order.createdByName)}` : ""}</span>
         </div>
-        ${order.address ? `<div>${icon("truck", "icon-sm")} ${esc(order.address)}</div>` : ""}
         ${order.notes ? `<div class="warn-box">${esc(order.notes)}</div>` : ""}
         ${order.cancelReason ? `<div class="error-box">Cancelado: ${esc(order.cancelReason)}</div>` : ""}
       </div>
@@ -254,7 +248,7 @@ let payAccounts = null;
 
 /**
  * Muestra el QR y las llaves para que el cliente pague: en el mostrador lo escanea de la pantalla;
- * por teléfono o domicilio se le envían los datos por WhatsApp.
+ * si pidió por teléfono o WhatsApp, se le envían los datos por WhatsApp.
  */
 async function openPayDialog(order) {
   try {
@@ -317,26 +311,14 @@ function renderLines() {
   renderFormTotals();
 }
 
-function feeValue() {
-  return Number(String(form().deliveryFee.value).replace(/\D/g, "")) || 0;
-}
-
 function renderFormTotals() {
   const subtotal = state.lines.reduce((sum, line) => sum + Math.round((productById(line.productId)?.price ?? 0) * line.qty), 0);
-  const isDelivery = form().deliveryType.value === "DOMICILIO";
-  const fee = isDelivery ? feeValue() : 0;
-  $("#form-totals").innerHTML = `
-    <div><span>Subtotal estimado</span><span class="num">${fmt.cop(subtotal)}</span></div>
-    ${isDelivery ? `<div><span>Domicilio</span><span class="num">${fmt.cop(fee)}</span></div>` : ""}
-    <div class="grand"><span>Total</span><span class="num">${fmt.cop(subtotal + fee)}</span></div>`;
+  $("#form-totals").innerHTML = `<div class="grand"><span>Total estimado</span><span class="num">${fmt.cop(subtotal)}</span></div>`;
 }
 
 function syncFormVisibility() {
   const f = form();
-  const delivery = f.deliveryType.value === "DOMICILIO";
-  $("#address-field").hidden = !delivery;
-  $("#fee-field").hidden = !delivery;
-  const counter = f.source.value === "MOSTRADOR" && !delivery;
+  const counter = f.source.value === "MOSTRADOR";
   $("#complete-now-field").hidden = !counter;
   if (!counter) f.completeNow.checked = false;
   f.paid.disabled = f.paymentMethod.value === "CREDITO";
@@ -376,7 +358,6 @@ function openOrderForm({ counter = false } = {}) {
     f.completeNow.checked = true;
     f.paid.checked = true;
   }
-  f.deliveryFee.value = state.settings?.deliveryFee ?? 0;
   $("#order-dialog-title").textContent = counter ? "Venta de mostrador" : "Nuevo pedido";
   renderProductOptions();
   renderLines();
@@ -393,18 +374,14 @@ async function submitOrder(event) {
     $("#form-error").hidden = false;
     return;
   }
-  const delivery = f.deliveryType.value;
   const body = {
     source: f.source.value,
-    deliveryType: delivery,
     customer: {
       name: f["customer.name"].value.trim() || (f.completeNow.checked ? "Cliente de mostrador" : ""),
       phone: f["customer.phone"].value.trim(),
-      address: delivery === "DOMICILIO" ? f["customer.address"].value.trim() : "",
     },
     paymentMethod: f.paymentMethod.value,
     paid: f.paid.checked,
-    deliveryFee: delivery === "DOMICILIO" ? feeValue() : undefined,
     notes: f.notes.value.trim(),
     items: state.lines,
     completeNow: f.completeNow.checked,
@@ -473,7 +450,6 @@ if (can("orders.create")) {
   const f = form();
   f.addEventListener("submit", submitOrder);
   f.addEventListener("change", syncFormVisibility);
-  f.deliveryFee.addEventListener("input", renderFormTotals);
   $("#add-line").addEventListener("click", addLine);
   $("#line-qty").addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
@@ -500,7 +476,6 @@ if (can("orders.create")) {
     const customer = JSON.parse(button.dataset.customer);
     f["customer.name"].value = customer.name;
     f["customer.phone"].value = customer.phone.slice(2);
-    if (customer.address) f["customer.address"].value = customer.address;
     $("#customer-suggest").hidden = true;
   });
 }
@@ -518,7 +493,6 @@ $("#closed").addEventListener("click", (event) => {
 $("#detail-dialog").addEventListener("close", () => (state.openId = null));
 bindCopy($("#pay-body"));
 $("#search").addEventListener("input", renderBoard);
-$$('input[name="filter-delivery"]').forEach((input) => input.addEventListener("change", renderBoard));
 
 await loadBoard();
 // Los minutos transcurridos se actualizan solos.

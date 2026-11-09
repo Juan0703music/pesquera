@@ -128,8 +128,9 @@ export const analyticsService = {
         lowStock: inventory.filter((product) => product.level !== "OK").length,
         inventoryValue: inventory.reduce((sum, product) => sum + product.stockValue, 0),
       },
-      pipeline: (["RECIBIDO", "ALISTANDO", "LISTO", "DESPACHADO", "ENTREGADO", "CANCELADO"] as const).map((status) => ({
-        status, label: STATUS_LABELS[status], count: statusCount(status),
+      // Sin domicilios no hay etapa «En camino»: un pedido antiguo que quedó en camino cuenta como listo para entregar.
+      pipeline: (["RECIBIDO", "ALISTANDO", "LISTO", "ENTREGADO", "CANCELADO"] as const).map((status) => ({
+        status, label: STATUS_LABELS[status], count: statusCount(status) + (status === "LISTO" ? statusCount("DESPACHADO") : 0),
       })),
       salesByHourCategory: byHourCategory.map((row) => ({ hour: row.hour, categoryId: row.category_id, total: Number(row.total) })),
       salesByDayCategory: byDayCategory.map((row) => ({ day: row.day, categoryId: row.category_id, total: Number(row.total) })),

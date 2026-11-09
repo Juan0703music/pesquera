@@ -6,10 +6,10 @@ import { resetDatabase } from "./helpers/db.js";
 
 beforeEach(async () => {
   await resetDatabase();
-  await settings({ deliveryFee: 6000, minOrderTotal: 0, storeOpen: true });
+  await settings({ minOrderTotal: 0, storeOpen: true });
 });
 
-const buyer = { name: "María Fernanda", phone: "310 789 4561", address: "Barrio Majagual, Cra 9 # 4-15" };
+const buyer = { name: "María Fernanda", phone: "310 789 4561" };
 
 describe("tienda en línea", () => {
   it("muestra lo que hay sin revelar costos ni existencias exactas", async () => {
@@ -31,11 +31,11 @@ describe("tienda en línea", () => {
     const mojarra = await product({ name: "Mojarra roja", price: 22000, stock: 8 });
 
     const res = await request(app).post("/api/v1/store/orders").send({
-      deliveryType: "DOMICILIO", paymentMethod: "NEQUI", customer: buyer, items: [{ productId: mojarra.id, qty: 2 }],
+      paymentMethod: "NEQUI", customer: buyer, items: [{ productId: mojarra.id, qty: 2 }],
     });
 
     expect(res.status).toBe(201);
-    expect(res.body.data).toMatchObject({ number: 1, total: 50000 });
+    expect(res.body.data).toMatchObject({ number: 1, total: 44000 });
     const { id, trackingKey } = res.body.data;
 
     const { agent } = await staff("VENTAS");
@@ -44,7 +44,7 @@ describe("tienda en línea", () => {
 
     const tracked = await request(app).get(`/api/v1/store/orders/${id}`).set("X-Order-Key", trackingKey);
     expect(tracked.status).toBe(200);
-    expect(tracked.body.data).toMatchObject({ number: 1, status: "RECIBIDO", total: 50000 });
+    expect(tracked.body.data).toMatchObject({ number: 1, status: "RECIBIDO", total: 44000, deliveryType: "RECOGE" });
 
     const wrongKey = await request(app).get(`/api/v1/store/orders/${id}`).set("X-Order-Key", "no-es-la-clave");
     expect(wrongKey.status).toBe(404);

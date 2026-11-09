@@ -18,7 +18,6 @@ const SettingsSchema = z.object({
   whatsapp: optionalPhone(mobilePhoneSchema),
   address: optionalText(200),
   storeOpen: z.boolean(),
-  deliveryFee: copSchema,
   minOrderTotal: copSchema,
 });
 

@@ -5,7 +5,7 @@ import { resetDatabase } from "./helpers/db.js";
 
 beforeEach(async () => {
   await resetDatabase();
-  await settings({ deliveryFee: 5000 });
+  await settings();
 });
 
 async function sell(agent: Awaited<ReturnType<typeof staff>>["agent"], items: { productId: string; qty: number }[], paymentMethod = "EFECTIVO") {

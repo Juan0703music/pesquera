@@ -49,8 +49,7 @@ async function newOrder() {
   const counter = Math.random() < 0.35;
   const { data } = await call<{ data: { number: number; total: number } }>("/orders", {
     source: counter ? "MOSTRADOR" : pick(["WHATSAPP", "TELEFONO"]),
-    deliveryType: counter ? "RECOGE" : pick(["DOMICILIO", "RECOGE"]),
-    customer: { name: pick(NAMES), address: "Barrio Centro, Calle 14 # 10-21" },
+    customer: { name: pick(NAMES) },
     paymentMethod: pick(["EFECTIVO", "NEQUI", "TRANSFERENCIA", "DATAFONO"]),
     paid: counter,
     completeNow: counter,

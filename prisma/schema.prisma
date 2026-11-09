@@ -198,15 +198,33 @@ model Product {
   active        Boolean  @default(true)
   /// Se muestra en la tienda en línea.
   inStore       Boolean  @default(true) @map("in_store")
+  /// Cómo lo puede pedir el cliente: «Entero», «Limpio», «En postas», «En filete»… (vacío: sin opciones).
+  cutOptions    String[] @default([]) @map("cut_options")
+  /// Sube cada vez que cambia la foto (la dirección de la imagen cambia y el navegador no usa la vieja).
+  photoVersion  Int      @default(0) @map("photo_version")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   category  Category            @relation(fields: [categoryId], references: [id])
   movements InventoryMovement[]
   items     OrderItem[]
+  photo     ProductPhoto?
 
   @@index([categoryId])
   @@map("products")
+}
+
+/// Foto del producto, ya procesada (WebP sin metadatos): grande para la ficha y pequeña para las listas.
+/// Va en su propia tabla para que listar productos nunca cargue imágenes.
+model ProductPhoto {
+  productId String   @id @map("product_id") @db.Uuid
+  large     Bytes
+  small     Bytes
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_photos")
 }
 
 model InventoryMovement {

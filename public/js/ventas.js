@@ -23,7 +23,7 @@ async function load() {
     $("#day-label").textContent = `${longDate(date)}${isToday ? " · se actualiza en vivo" : ""}`;
     $("#next").disabled = isToday;
     const tiles = [
-      ["cash", "Ventas", fmt.cop(s.total), `${s.count} pedidos · domicilios ${fmt.cop(s.deliveryFees)}`],
+      ["cash", "Ventas", fmt.cop(s.total), `${s.count} pedidos${s.deliveryFees ? ` · domicilios antiguos ${fmt.cop(s.deliveryFees)}` : ""}`],
       ["bag", "Ticket promedio", fmt.cop(s.avgTicket), "por pedido"],
       ["scale", "Vendido", `${fmt.num(s.kgMilli / 1000)} kg`, `${fmt.num(s.unitsMilli / 1000)} unidades`],
       ["checkCircle", "Ganancia estimada", fmt.cop(s.grossProfit), `margen ${fmt.num(s.marginPct)} % · costo ${fmt.cop(s.costOfGoods)}`],
@@ -41,7 +41,7 @@ async function load() {
       ? `<table class="table"><thead><tr><th>Hora</th><th>#</th><th>Cliente</th><th>Origen</th><th>Pago</th><th class="right">Total</th></tr></thead><tbody>
         ${data.orders.map((order) => `<tr>
           <td class="num">${fmt.time(order.dispatchedAt)}</td><td class="num">#${order.number}</td>
-          <td>${esc(order.customerName)}<br><span class="muted">${LABELS.delivery[order.deliveryType]}${order.createdByName ? ` · ${esc(order.createdByName)}` : ""}</span></td>
+          <td>${esc(order.customerName)}<br><span class="muted">${order.createdByName ? esc(order.createdByName) : "Tienda en línea"}</span></td>
           <td>${LABELS.source[order.source]}</td>
           <td>${order.paid ? esc(order.paymentLabel) : `<span class="badge badge-warning">${icon("clock")}Por cobrar · ${esc(order.paymentLabel)}</span>`}</td>
           <td class="right num"><strong>${fmt.cop(order.total)}</strong></td></tr>`).join("")}

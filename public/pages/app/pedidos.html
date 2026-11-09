@@ -25,11 +25,6 @@
         </div>
         <div class="toolbar">
           <label class="search"><span class="sr-only">Buscar pedido</span><input class="input" id="search" type="search" placeholder="Buscar por número, cliente o producto" autocomplete="off" /></label>
-          <div class="segmented" role="radiogroup" aria-label="Tipo de entrega">
-            <label><input type="radio" name="filter-delivery" value="" checked /><span>Todos</span></label>
-            <label><input type="radio" name="filter-delivery" value="DOMICILIO" /><span>Domicilios</span></label>
-            <label><input type="radio" name="filter-delivery" value="RECOGE" /><span>Recogen</span></label>
-          </div>
         </div>
         <div class="board" id="board"></div>
         <section class="card closed-today">
@@ -53,16 +48,11 @@
               <label><input type="radio" name="source" value="TELEFONO" /><span data-icon="phone">Llamada</span></label>
               <label><input type="radio" name="source" value="WHATSAPP" /><span data-icon="chat">WhatsApp</span></label>
             </div>
-            <div class="segmented" role="radiogroup" aria-label="Entrega">
-              <label><input type="radio" name="deliveryType" value="RECOGE" checked /><span data-icon="bag">Recoge</span></label>
-              <label><input type="radio" name="deliveryType" value="DOMICILIO" /><span data-icon="truck">Domicilio</span></label>
-            </div>
           </div>
           <div class="grid-2">
             <label class="field suggest"><span>Cliente</span><input class="input" name="customer.name" autocomplete="off" required placeholder="Nombre o negocio" /><div class="suggest-list" id="customer-suggest" hidden></div></label>
             <label class="field"><span>Celular</span><input class="input" name="customer.phone" inputmode="tel" autocomplete="off" placeholder="300 123 4567" /></label>
           </div>
-          <label class="field" id="address-field" hidden><span>Dirección del domicilio</span><input class="input" name="customer.address" autocomplete="off" /></label>
 
           <div>
             <div class="section-title">Productos</div>
@@ -84,7 +74,6 @@
                 <option value="DATAFONO">Datáfono</option><option value="CREDITO">Crédito (fiado)</option>
               </select>
             </label>
-            <label class="field" id="fee-field" hidden><span>Valor del domicilio</span><input class="input num" name="deliveryFee" inputmode="numeric" /></label>
             <div class="field"><span>&nbsp;</span><label class="check"><input type="checkbox" name="paid" /> Ya pagó</label></div>
           </div>
           <label class="field"><span>Notas</span><input class="input" name="notes" maxlength="300" placeholder="Llamar al llegar, factura a nombre de…" /></label>

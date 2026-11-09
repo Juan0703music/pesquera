@@ -14,6 +14,7 @@ import { analyticsRoutes } from "./modules/analytics/analytics.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { readSessionToken } from "./modules/auth/session-cookie.js";
 import { catalogRoutes } from "./modules/catalog/catalog.routes.js";
+import { mediaRoutes } from "./modules/catalog/photos.js";
 import { customersRoutes } from "./modules/customers/customers.routes.js";
 import { inventoryRoutes } from "./modules/inventory/inventory.routes.js";
 import { ordersRoutes } from "./modules/orders/orders.routes.js";
@@ -114,6 +115,9 @@ export function createApp() {
   );
 
   app.use("/api/v1", apiLimiter, originGuard, express.json({ limit: "100kb" }), apiRouter(), apiNotFound);
+
+  // Fotos de los productos (públicas: las ve la tienda).
+  app.use("/media", mediaRoutes);
 
   // Three.js para las gráficas 3D (servido desde node_modules, sin CDN).
   app.use("/vendor/three", express.static(threeDir, { maxAge: "7d", index: false }));

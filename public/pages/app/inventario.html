@@ -84,7 +84,30 @@
             <label class="field"><span id="price-label">Precio por kilo</span><input class="input num" name="price" inputmode="numeric" required /></label>
             <label class="field"><span id="min-label">Alerta de stock bajo (kg)</span><input class="input num" name="minStock" inputmode="decimal" /></label>
           </div>
-          <label class="field"><span>Descripción (se ve en la tienda)</span><textarea class="input" name="description" maxlength="300"></textarea></label>
+          <div class="field">
+            <span>Foto (se ve en la tienda)</span>
+            <div class="photo-field">
+              <div class="photo-preview" id="photo-preview"></div>
+              <div class="stack">
+                <span class="muted" id="photo-help">Una foto real del producto, con buena luz. JPG, PNG o WebP; se ajusta sola y se le quita la ubicación del celular.</span>
+                <div class="row">
+                  <label class="btn btn-sm">Elegir foto<input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="sr-only" /></label>
+                  <button type="button" class="btn btn-sm btn-ghost btn-danger" id="photo-remove" hidden>Quitar foto</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <label class="field"><span>Descripción (se ve en la tienda)</span><textarea class="input" name="description" maxlength="300" placeholder="Para qué sirve, cómo rinde, de dónde viene…"></textarea></label>
+          <div class="field">
+            <span>¿Cómo lo puede pedir el cliente?</span>
+            <div class="cut-editor" id="cut-editor"></div>
+            <div class="row">
+              <label class="sr-only" for="cut-custom">Otra opción</label>
+              <input class="input input-inline" id="cut-custom" maxlength="30" placeholder="Otra opción" />
+              <button type="button" class="btn btn-sm" id="cut-add">Agregar</button>
+            </div>
+            <span class="muted">Toca las opciones para activarlas. Sin opciones, el cliente lo pide tal cual.</span>
+          </div>
           <div class="row"><label class="check"><input type="checkbox" name="active" checked /> Activo</label><label class="check"><input type="checkbox" name="inStore" checked /> Visible en la tienda en línea</label></div>
           <div class="error-box" id="product-error" hidden></div>
         </div>

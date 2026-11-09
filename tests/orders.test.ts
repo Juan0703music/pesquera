@@ -6,19 +6,19 @@ import { resetDatabase } from "./helpers/db.js";
 
 beforeEach(async () => {
   await resetDatabase();
-  await settings({ deliveryFee: 5000 });
+  await settings();
 });
 
-const customer = { name: "Restaurante El Muelle", phone: "300 456 1234", address: "Calle 22 # 18-05" };
+const customer = { name: "Restaurante El Muelle", phone: "300 456 1234" };
 
 async function newOrder(agent: request.Agent, items: { productId: string; qty: number; note?: string }[], extra: Record<string, unknown> = {}) {
   return agent.post("/api/v1/orders").send({
-    source: "WHATSAPP", deliveryType: "DOMICILIO", paymentMethod: "EFECTIVO", customer, items, ...extra,
+    source: "WHATSAPP", paymentMethod: "EFECTIVO", customer, items, ...extra,
   });
 }
 
 describe("recibir pedidos", () => {
-  it("calcula el total por kilo y por unidad, con el domicilio de la configuración", async () => {
+  it("calcula el total por kilo y por unidad, sin domicilio (el cliente recoge)", async () => {
     const { agent } = await staff("VENTAS");
     const mojarra = await product({ price: 22000, stock: 20 });
     const hielo = await product({ unit: "UNIDAD", price: 4000, stock: 30 });
@@ -30,7 +30,7 @@ describe("recibir pedidos", () => {
     const order = res.body.data;
     expect(order.status).toBe("RECIBIDO");
     expect(order.items.map((item: { qtyMilli: number; lineTotal: number }) => [item.qtyMilli, item.lineTotal])).toEqual([[2500, 55000], [3000, 12000]]);
-    expect(order).toMatchObject({ subtotal: 67000, deliveryFee: 5000, total: 72000, customerPhone: "573004561234", paid: false });
+    expect(order).toMatchObject({ subtotal: 67000, deliveryFee: 0, total: 67000, deliveryType: "RECOGE", address: null, customerPhone: "573004561234", paid: false });
     // El inventario no se toca al recibir: queda comprometido.
     expect(await stockOf(mojarra.id)).toBe(20000);
     const listed = await agent.get("/api/v1/catalog/products");
@@ -51,7 +51,7 @@ describe("recibir pedidos", () => {
     expect(res.body.warnings[0].message).toContain("Pargo rojo: piden 2 kg y hay disponible 1 kg");
   });
 
-  it("exige cantidades enteras en productos por unidad y dirección en los domicilios", async () => {
+  it("exige cantidades enteras en productos por unidad y no acepta domicilios", async () => {
     const { agent } = await staff("VENTAS");
     const hielo = await product({ name: "Bolsa de hielo", unit: "UNIDAD", stock: 10 });
 
@@ -59,9 +59,10 @@ describe("recibir pedidos", () => {
     expect(fractional.status).toBe(400);
     expect(fractional.body.error.message).toContain("se vende por unidad");
 
-    const noAddress = await newOrder(agent, [{ productId: hielo.id, qty: 1 }], { customer: { name: "Ana" } });
-    expect(noAddress.status).toBe(400);
-    expect(noAddress.body.error.fields["customer.address"]).toBe("Escribe la dirección del domicilio.");
+    // Aunque alguien envíe un domicilio (una pantalla vieja), el pedido queda para recoger y sin valor de domicilio.
+    const old = await newOrder(agent, [{ productId: hielo.id, qty: 1 }], { deliveryType: "DOMICILIO", deliveryFee: 5000, customer: { name: "Ana", address: "Calle 1" } });
+    expect(old.status).toBe(201);
+    expect(old.body.data).toMatchObject({ deliveryType: "RECOGE", deliveryFee: 0, address: null });
   });
 
   it("la venta de mostrador se entrega y descuenta en el acto", async () => {
@@ -103,10 +104,10 @@ describe("alistar, pesar y despachar", () => {
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe("ALISTANDO");
     expect(res.body.data.items[0]).toMatchObject({ qtyMilli: 2000, actualQtyMilli: 2134, lineTotal: 102432 });
-    expect(res.body.data).toMatchObject({ subtotal: 102432, total: 107432 });
+    expect(res.body.data).toMatchObject({ subtotal: 102432, total: 102432 });
   });
 
-  it("al despachar descuenta el peso real y deja el kardex con el costo", async () => {
+  it("al entregar descuenta el peso real y deja el kardex con el costo", async () => {
     const { agent: ventas } = await staff("VENTAS");
     const { agent: despacho } = await staff("DESPACHO");
     const mojarra = await product({ price: 22000, stock: 20, cost: 15000 });
@@ -114,19 +115,19 @@ describe("alistar, pesar y despachar", () => {
     await despacho.post(`/api/v1/orders/${order.id}/weigh`).send({ items: [{ itemId: order.items[0].id, actualQty: 3.2 }] });
     await despacho.post(`/api/v1/orders/${order.id}/status`).send({ status: "LISTO" }).expect(200);
 
-    const res = await despacho.post(`/api/v1/orders/${order.id}/status`).send({ status: "DESPACHADO" });
+    const res = await despacho.post(`/api/v1/orders/${order.id}/status`).send({ status: "ENTREGADO" });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe("DESPACHADO");
+    expect(res.body.data.status).toBe("ENTREGADO");
     expect(await stockOf(mojarra.id)).toBe(16800);
     const movement = await prisma.inventoryMovement.findFirstOrThrow({ where: { type: "SALIDA_PEDIDO" } });
     expect(movement).toMatchObject({ qtyMilli: -3200, stockAfterMilli: 16800, unitCost: 15000 });
 
-    // Entregar después no vuelve a descontar.
-    await despacho.post(`/api/v1/orders/${order.id}/status`).send({ status: "ENTREGADO" }).expect(200);
+    // Entregarlo otra vez no vuelve a descontar.
+    expect((await despacho.post(`/api/v1/orders/${order.id}/status`).send({ status: "ENTREGADO" })).status).toBe(409);
     expect(await stockOf(mojarra.id)).toBe(16800);
     const detail = await despacho.get(`/api/v1/orders/${order.id}`);
-    expect(detail.body.data.events.map((event: { status: string }) => event.status)).toEqual(["RECIBIDO", "ALISTANDO", "LISTO", "DESPACHADO", "ENTREGADO"]);
+    expect(detail.body.data.events.map((event: { status: string }) => event.status)).toEqual(["RECIBIDO", "ALISTANDO", "LISTO", "ENTREGADO"]);
   });
 
   it("si el cliente recoge, despachar es entregar", async () => {

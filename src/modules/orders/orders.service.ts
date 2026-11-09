@@ -94,13 +94,13 @@ async function shortages(tx: Prisma.TransactionClient, lines: BuiltLine[]) {
     }));
 }
 
-/** Cliente por celular: lo crea o actualiza su nombre y dirección. */
-async function upsertCustomer(tx: Prisma.TransactionClient, customer: { name: string; phone?: string; address?: string }) {
+/** Cliente por celular: lo crea o actualiza su nombre. */
+async function upsertCustomer(tx: Prisma.TransactionClient, customer: { name: string; phone?: string }) {
   if (!customer.phone) return null;
   return tx.customer.upsert({
     where: { phone: customer.phone },
-    create: { name: customer.name, phone: customer.phone, address: customer.address ?? null },
-    update: { name: customer.name, ...(customer.address ? { address: customer.address } : {}) },
+    create: { name: customer.name, phone: customer.phone },
+    update: { name: customer.name },
   });
 }
 
@@ -137,7 +137,8 @@ async function guardedUpdate(tx: Prisma.TransactionClient, order: OrderWithItems
   if (count === 0) throw conflict("Otra persona acaba de modificar este pedido. Revisa su estado actual.", "CONCURRENT_UPDATE");
 }
 
-async function totalsFor(lines: { lineTotal: number }[], deliveryFee: number) {
+/** Subtotal y total. Los pedidos nuevos no llevan domicilio; los antiguos conservan el valor que tenían. */
+async function totalsFor(lines: { lineTotal: number }[], deliveryFee = 0) {
   const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
   return { subtotal, deliveryFee, total: subtotal + deliveryFee };
 }
@@ -154,24 +155,21 @@ export const ordersService = {
 
   /** Pedido del personal. Devuelve avisos si algún producto supera lo disponible (no lo impide: el pesaje manda). */
   async create(input: CreateOrderInput, actor: AuthContext) {
-    const settings = await getSettings();
     const result = await prisma.$transaction(async (tx) => {
       const lines = await buildLines(tx, input.items, { store: false });
       const warnings = await shortages(tx, lines);
       const customer = await upsertCustomer(tx, input.customer);
-      const fee = input.deliveryType === "DOMICILIO" ? (input.deliveryFee ?? settings.deliveryFee) : 0;
-      const totals = await totalsFor(lines, fee);
+      const totals = await totalsFor(lines);
       const now = new Date();
       const paidAt = input.paymentMethod !== "CREDITO" && (input.paid || input.completeNow) ? now : null;
       const created = await tx.order.create({
         data: {
           source: input.source as OrderSource,
           status: input.completeNow ? "ENTREGADO" : "RECIBIDO",
-          deliveryType: input.deliveryType,
+          deliveryType: "RECOGE",
           customerId: customer?.id ?? null,
           customerName: input.customer.name,
           customerPhone: input.customer.phone ?? null,
-          address: input.deliveryType === "DOMICILIO" ? (input.customer.address ?? null) : null,
           notes: input.notes ?? null,
           paymentMethod: input.paymentMethod,
           paidAt,
@@ -201,7 +199,7 @@ export const ordersService = {
       if (missing.length > 0) {
         throw conflict(`No alcanza el producto disponible. ${missing.map((item) => item.message).join(" ")}`, "OUT_OF_STOCK");
       }
-      const totals = await totalsFor(lines, input.deliveryType === "DOMICILIO" ? settings.deliveryFee : 0);
+      const totals = await totalsFor(lines);
       if (totals.subtotal < settings.minOrderTotal) {
         throw badRequest(`El pedido mínimo en línea es de ${formatCOP(settings.minOrderTotal)}.`, "MIN_ORDER");
       }
@@ -209,11 +207,10 @@ export const ordersService = {
       return tx.order.create({
         data: {
           source: "WEB",
-          deliveryType: input.deliveryType,
+          deliveryType: "RECOGE",
           customerId: customer?.id ?? null,
           customerName: input.customer.name,
           customerPhone: input.customer.phone,
-          address: input.deliveryType === "DOMICILIO" ? (input.customer.address ?? null) : null,
           notes: input.notes ?? null,
           paymentMethod: input.paymentMethod,
           ...totals,

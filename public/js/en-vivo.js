@@ -27,7 +27,7 @@ function renderKpis({ kpis }) {
     ["checkCircle", "Pedidos vendidos", fmt.num(kpis.ordersToday), `<span class="muted">ayer a esta hora: ${kpis.ordersYesterdaySameTime}</span>`],
     ["bag", "Ticket promedio", fmt.cop(kpis.avgTicket), '<span class="muted">por pedido</span>'],
     ["scale", "Kilos vendidos", `${fmt.num(kpis.kgSoldMilli / 1000)} kg`, '<span class="muted">pescado y mariscos</span>'],
-    ["inbox", "Por despachar", fmt.num(kpis.openOrders), `<span class="muted">${kpis.onTheWay} en camino</span>`],
+    ["inbox", "Por entregar", fmt.num(kpis.openOrders + kpis.onTheWay), '<span class="muted">recibidos, alistando y listos</span>'],
     ["clock", "Tiempo de despacho", kpis.avgDispatchMinutes === null ? "—" : `${kpis.avgDispatchMinutes} min`, '<span class="muted">promedio, de recibido a despachado</span>'],
     ["cash", "Cobrado hoy", fmt.cop(kpis.collectedToday), `<span class="muted">por cobrar ${fmt.cop(kpis.salesToday - kpis.collectedToday)}</span>`],
     ["alert", "Alertas de bodega", fmt.num(kpis.lowStock), `<span class="muted">valor en bodega ${fmt.copShort(kpis.inventoryValue)}</span>`],

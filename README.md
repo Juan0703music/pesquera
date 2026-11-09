@@ -9,21 +9,23 @@ Recibe pedidos, los despacha con el **peso real**, lleva el **inventario por kil
 
 | Pantalla | Para qué | Quién la ve |
 |---|---|---|
-| **Pedidos** | Tablero en columnas (Recibidos → Alistando → Listos → En camino). Pedido nuevo por mostrador, llamada o WhatsApp; venta de mostrador que se entrega y descuenta en el acto; pesaje con el peso real; despacho; cobro; cancelación. Suena y avisa cuando entra un pedido. | Todos (cada rol con sus botones) |
-| **Inventario** | Existencia, comprometido (pedidos abiertos) y disponible; alertas de stock bajo; entradas de mercancía con costo (costo promedio ponderado), conteos físicos, mermas y kardex por producto. | Todos ven; Bodega y Admin mueven |
+| **Pedidos** | Tablero en columnas (Recibidos → Alistando → Listos). La pesquera no hace domicilios: el cliente recoge. Pedido nuevo por mostrador, llamada o WhatsApp; venta de mostrador que se entrega y descuenta en el acto; pesaje con el peso real; despacho; cobro; cancelación. Suena y avisa cuando entra un pedido. | Todos (cada rol con sus botones) |
+| **Inventario** | Existencia, comprometido (pedidos abiertos) y disponible; foto de cada producto (se guarda en WebP, sin la ubicación del celular) y «cómo lo puede pedir el cliente» (entero, limpio, en postas…); alertas de stock bajo; entradas de mercancía con costo (costo promedio ponderado), conteos físicos, mermas y kardex por producto. | Todos ven; Bodega y Admin mueven |
 | **Ventas del día** | Ventas, ticket promedio, kilos, cobrado vs. por cobrar, ganancia estimada, cierre de caja por forma de pago (imprimible), más vendidos y origen. Cualquier día. | Admin y Ventas |
 | **En vivo 3D** | Cifras del día contra ayer a la misma hora, pedidos ahora, actividad, ventas por hora × categoría en 3D, bodega en 3D (valor y nivel de existencia) y los últimos 14 días en 3D. Cada gráfica tiene tooltip y «Ver como tabla». | Admin |
 | **Cuentas de cobro** | Llaves Bre-B (celular, documento o código de comercio, correo, @alias), Nequi, Daviplata y cuentas bancarias. Se sube el pantallazo del QR que da el banco: Marea lee el código y lo muestra nítido (la imagen no se guarda). | Admin configura; Ventas las ve para cobrar |
 | **Personal / Ajustes** | Usuarios por rol; datos de la pesquera, domicilio, pedido mínimo y tienda abierta/cerrada. | Admin |
-| **Tienda** (`/tienda`) | Los clientes piden desde el celular, solo lo disponible, y siguen su pedido en vivo con un enlace propio. | Público |
+| **Tienda** (`/tienda`) | «La pizarra del día»: lo que llegó hoy (o lo más pedido) con fotos y la lista de precios del día; buscador y categorías; ficha con foto, cortes y cantidades rápidas (½ a 10 kg); «Pedir lo mismo» de la última vez; el cliente recoge en la pesquera y sigue su pedido en vivo. | Público |
 
 ### Reglas del negocio (las hace cumplir el servidor y la base de datos)
 
 - Cantidades en milésimas (gramos para lo que va por kilo) y dinero en pesos enteros: sin errores de redondeo.
-- Al **recibir** un pedido la mercancía queda **comprometida**; se **descuenta** cuando sale (despachado, o entregado si el cliente recoge), con el peso real si se pesó.
+- Sin domicilios: todo pedido se recoge en la pesquera (Recibido → Alistando → Listo → Entregado). Los pedidos antiguos con domicilio se conservan en el historial.
+- Al **recibir** un pedido la mercancía queda **comprometida**; se **descuenta** al entregarlo, con el peso real si se pesó.
 - Nunca hay existencias negativas: el despacho se rechaza si no alcanza (también con dos personas despachando a la vez).
 - La tienda en línea no deja pedir más de lo disponible; el personal sí puede, con aviso (el pesaje manda).
 - Un pedido que ya salió solo lo anula el administrador, y la mercancía vuelve al inventario.
+- «Llegó hoy» sale de las entradas de mercancía registradas hoy en Inventario; «quedan pocos», de lo disponible.
 - Pagos por transferencia: el cliente ve las cuentas según la forma de pago (Nequi → Nequi y llave Bre-B; transferencia →
   banco, Daviplata y Bre-B). En el seguimiento ve el QR y el valor; si hay productos por kilo sin pesar, el valor dice
   «estimado» hasta el pesaje. En el panel, «Cobrar con QR» lo muestra en pantalla o lo envía por WhatsApp.

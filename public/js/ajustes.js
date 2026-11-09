@@ -12,7 +12,6 @@ try {
   form.phone.value = local(data.phone);
   form.whatsapp.value = local(data.whatsapp);
   form.storeOpen.checked = data.storeOpen;
-  form.deliveryFee.value = data.deliveryFee;
   form.minOrderTotal.value = data.minOrderTotal;
   $("#store-url").textContent = `${location.origin}/tienda`;
 } catch (error) {
@@ -26,7 +25,7 @@ form.addEventListener("submit", async (event) => {
       method: "PUT",
       body: {
         businessName: form.businessName.value.trim(), address: form.address.value, phone: form.phone.value, whatsapp: form.whatsapp.value,
-        storeOpen: form.storeOpen.checked, deliveryFee: money(form.deliveryFee.value), minOrderTotal: money(form.minOrderTotal.value),
+        storeOpen: form.storeOpen.checked, minOrderTotal: money(form.minOrderTotal.value),
       },
     });
     toast("Ajustes guardados.");

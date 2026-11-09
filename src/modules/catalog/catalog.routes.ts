@@ -8,6 +8,7 @@ import { conflict } from "../../utils/errors.js";
 import { copSchema } from "../../utils/money.js";
 import { MAX_QTY, toMilli } from "../../utils/quantity.js";
 import { committedByProduct } from "../inventory/stock.js";
+import { photoUrls, productPhotoRoutes } from "./photos.js";
 
 const IdParams = z.object({ id: z.uuid("Identificador inválido.") });
 const optionalText = (max: number) =>
@@ -28,6 +29,12 @@ const ProductSchema = z.object({
   minStock: z.number().min(0).max(MAX_QTY).default(0),
   active: z.boolean().default(true),
   inStore: z.boolean().default(true),
+  /** Cómo lo puede pedir el cliente (entero, limpio, en postas…). Sin repetir y sin vacíos. */
+  cutOptions: z
+    .array(z.string().trim().min(2, "Cada opción debe tener al menos 2 letras.").max(30, "Cada opción puede tener hasta 30 letras."))
+    .max(10, "Máximo 10 opciones.")
+    .transform((options) => [...new Map(options.map((option) => [option.toLowerCase(), option])).values()])
+    .default([]),
 });
 const UpdateProductSchema = ProductSchema.partial();
 
@@ -42,6 +49,10 @@ export const productSelect = {
   minStockMilli: true,
   active: true,
   inStore: true,
+  cutOptions: true,
+  photoVersion: true,
+  // Solo si tiene foto (nunca se cargan los bytes en las listas).
+  photo: { select: { updatedAt: true } },
   category: { select: { id: true, name: true } },
 } as const;
 
@@ -55,7 +66,15 @@ export async function listProductsWithStock(where: { active?: boolean } = {}) {
     const committedMilli = committed.get(product.id) ?? 0;
     const availableMilli = product.stockMilli - committedMilli;
     const level = product.stockMilli <= 0 ? "AGOTADO" : product.stockMilli <= product.minStockMilli ? "BAJO" : "OK";
-    return { ...product, committedMilli, availableMilli, level, stockValue: Math.round((product.stockMilli * product.avgCost) / 1000) };
+    const { photo: _photo, ...rest } = product;
+    return {
+      ...rest,
+      photo: photoUrls(product),
+      committedMilli,
+      availableMilli,
+      level,
+      stockValue: Math.round((product.stockMilli * product.avgCost) / 1000),
+    };
   });
 }
 
@@ -84,6 +103,9 @@ catalogRoutes.get("/products", requirePermission("inventory.view"), async (req, 
   const includeInactive = req.query.all === "1";
   res.json({ data: await listProductsWithStock(includeInactive ? {} : { active: true }) });
 });
+
+// Fotos: PUT y DELETE /products/:id/photo.
+catalogRoutes.use("/products", productPhotoRoutes);
 
 catalogRoutes.post("/products", requirePermission("catalog.manage"), validate({ body: ProductSchema }), async (req, res) => {
   const { minStock, ...input } = req.body as z.infer<typeof ProductSchema>;

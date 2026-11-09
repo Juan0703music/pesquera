@@ -49,10 +49,10 @@ export async function product(options: { name?: string; unit?: "KG" | "UNIDAD"; 
 
 export const stockOf = async (id: string) => (await prisma.product.findUniqueOrThrow({ where: { id } })).stockMilli;
 
-export async function settings(data: Partial<{ storeOpen: boolean; deliveryFee: number; minOrderTotal: number }> = {}) {
+export async function settings(data: Partial<{ storeOpen: boolean; minOrderTotal: number }> = {}) {
   return prisma.setting.upsert({
     where: { id: 1 },
-    create: { id: 1, businessName: "Pesquera de Prueba", storeOpen: true, deliveryFee: 5000, minOrderTotal: 0, ...data },
+    create: { id: 1, businessName: "Pesquera de Prueba", storeOpen: true, minOrderTotal: 0, ...data },
     update: data,
   });
 }

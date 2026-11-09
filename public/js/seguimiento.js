@@ -48,7 +48,7 @@ async function load() {
       ${order.deliveryFee ? `<div><span>Domicilio</span><span class="num">${fmt.cop(order.deliveryFee)}</span></div>` : ""}
       <div class="grand"><span>Total</span><span class="num">${fmt.cop(order.total)}</span></div>
     </div>
-    <p class="muted">${LABELS.delivery[order.deliveryType]}${order.address ? ` · ${esc(order.address)}` : ""} · Pago: ${LABELS.payment[order.paymentMethod]}${order.paid ? " (pagado)" : ""}</p>`;
+    <p class="muted">${order.deliveryType === "DOMICILIO" ? `Domicilio${order.address ? ` · ${esc(order.address)}` : ""}` : "Recoges en la pesquera"} · Pago: ${LABELS.payment[order.paymentMethod]}${order.paid ? " (pagado)" : ""}</p>`;
   renderPayment(order);
   if (["ENTREGADO", "CANCELADO"].includes(order.status)) clearInterval(timer);
 }

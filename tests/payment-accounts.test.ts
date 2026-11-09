@@ -8,7 +8,7 @@ import { resetDatabase } from "./helpers/db.js";
 
 beforeEach(async () => {
   await resetDatabase();
-  await settings({ deliveryFee: 5000 });
+  await settings();
 });
 
 // Código de ejemplo con la forma de un QR interoperable (EMVCo); no es un código de pago real.
