@@ -70,7 +70,7 @@ function rankRows(rows, valueText) {
 
 function applyWidths(root) {
   // Los anchos se aplican con CSSOM (la política de seguridad no permite estilos en línea en el HTML).
-  requestAnimationFrame(() => $$("[data-w]", root).forEach((node) => node.style.setProperty("--w", `${node.dataset.w}%`)));
+  requestAnimationFrame(() => $$("[data-w]", root).forEach((node) => node.style.setProperty("--s", String(Number(node.dataset.w) / 100))));
 }
 
 function renderRanks({ topProducts, payments }) {
@@ -88,7 +88,7 @@ function renderLegends({ categories }) {
   }
   const stock = $("#legend-stock");
   stock.innerHTML = `
-    <span><i class="swatch" data-tone="--good"></i>${icon("checkCircle", "icon-sm")}Bien</span>
+    <span><i class="swatch" data-tone="--stock-ok"></i>${icon("checkCircle", "icon-sm")}Bien</span>
     <span><i class="swatch" data-tone="--warning"></i>${icon("alert", "icon-sm")}Stock bajo</span>
     <span><i class="swatch" data-tone="--critical"></i>${icon("ban", "icon-sm")}Agotado</span>
     <span><i class="swatch" data-tone="--series-neutral"></i>Comprometido en pedidos abiertos</span>`;
@@ -126,7 +126,7 @@ function stockData(data) {
   const { categories, inventory } = data;
   const byCategory = categories.map((category) => inventory.filter((product) => product.categoryId === category.id));
   const width = Math.max(1, ...byCategory.map((list) => list.length));
-  const tone = { OK: css("--good"), BAJO: css("--warning"), AGOTADO: css("--critical") };
+  const tone = { OK: css("--stock-ok"), BAJO: css("--warning"), AGOTADO: css("--critical") };
   const cells = [];
   byCategory.forEach((products, z) =>
     products.forEach((product, x) => {
@@ -245,6 +245,28 @@ clock();
 setInterval(clock, 1000);
 // Además de los avisos, se refresca cada minuto (comparación con ayer «a esta hora», minutos transcurridos).
 setInterval(load, 60_000);
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => state.data && (renderLegends(state.data), renderCharts(state.data)));
+// Las series de cada tema tienen sus propios pasos: al cambiar de tema se vuelven a leer y pintar.
+window.addEventListener("marea:tema", () => state.data && (renderLegends(state.data), renderCharts(state.data)));
+
+// Modo pantalla: el tablero ocupa todo el televisor (sin menú, cifras más grandes).
+const wallButton = $("#wall");
+wallButton.innerHTML = `${icon("expand")}Modo pantalla`;
+wallButton.addEventListener("click", async () => {
+  const entering = !document.body.classList.contains("wall");
+  document.body.classList.toggle("wall", entering);
+  wallButton.setAttribute("aria-pressed", String(entering));
+  try {
+    if (entering && !document.fullscreenElement) await document.documentElement.requestFullscreen();
+    if (!entering && document.fullscreenElement) await document.exitFullscreen();
+  } catch {
+    // Sin pantalla completa (permiso o navegador): el modo pantalla igual quita el menú.
+  }
+});
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement && document.body.classList.contains("wall")) {
+    document.body.classList.remove("wall");
+    wallButton.setAttribute("aria-pressed", "false");
+  }
+});
 
 connectLive(() => reload());

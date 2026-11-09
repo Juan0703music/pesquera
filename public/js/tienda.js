@@ -1,4 +1,6 @@
-import { $, $$, api, ApiError, esc, fmt, icon, openDialog, showFieldErrors } from "/js/core.js";
+import { $, $$, api, ApiError, esc, fmt, icon, openDialog, showFieldErrors, themeControl } from "/js/core.js";
+
+$("#theme").innerHTML = themeControl("toggle");
 
 const CART_KEY = "marea-carrito";
 const ART = ["fish", "shrimp", "fillet", "box"];

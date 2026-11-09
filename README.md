@@ -43,6 +43,14 @@ Recibe pedidos, los despacha con el **peso real**, lleva el **inventario por kil
 | Despacho | Alistar, pesar, marcar listo, despachar y entregar |
 | Bodega | Entradas de mercancía, conteos y mermas |
 
+### Aspecto
+
+- Identidad marina: menú «mar profundo» en los dos temas, acción aguamarina y tipografía propia (Bricolage Grotesque,
+  servida desde el proyecto, sin internet) para títulos y cifras.
+- **Tema claro u oscuro** con el botón «Claro / Oscuro» del menú (también en la entrada y en la tienda). Por defecto sigue
+  el tema del equipo; la elección se recuerda en cada navegador. Cada tema tiene sus propios colores, también en las gráficas 3D.
+- **Modo pantalla** en «En vivo 3D» para dejar el tablero a pantalla completa en un televisor.
+
 ## Cómo arrancarlo (desarrollo)
 
 Requisitos: Node 22.12 o superior. No hace falta Docker: PostgreSQL corre embebido.

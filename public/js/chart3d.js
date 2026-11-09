@@ -75,7 +75,8 @@ export class Bars3D {
     this.#bindControls();
     this.resizeObserver = new ResizeObserver(() => this.#resize());
     this.resizeObserver.observe(host);
-    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => this.refreshTheme());
+    // Al cambiar de tema (botón Claro/Oscuro o el del equipo) se repintan rejilla, ejes y colores.
+    window.addEventListener("marea:tema", () => this.refreshTheme());
     this.#resize();
     this.#loop();
   }
@@ -247,7 +248,7 @@ export class Bars3D {
     const H = this.options.height;
     const corners = [];
     // A la derecha van los nombres de las filas y a la izquierda los valores del eje: más margen en X.
-    for (const x of [-halfX - 1.1, halfX + 2.2]) for (const y of [0, H + 0.3]) for (const z of [-halfZ - 0.2, halfZ + 0.8]) corners.push(new THREE.Vector3(x, y, z));
+    for (const x of [-halfX - 1.1, halfX + 3.4]) for (const y of [0, H + 0.3]) for (const z of [-halfZ - 0.2, halfZ + 0.8]) corners.push(new THREE.Vector3(x, y, z));
     const target = new THREE.Vector3(0, H * 0.3, 0);
     const { theta, phi } = this.defaultView;
     const fits = (radius) => {

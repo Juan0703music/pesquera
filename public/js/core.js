@@ -37,6 +37,9 @@ const PATHS = {
   shrimp: '<path d="M20 6c-6-2-13 1-14 7-.5 3 1 5 3 6"/><path d="M20 6c-1 4-4 7-8 8M9 19l-2 2M12 14l-2 4M16 11l-2 3"/>',
   fillet: '<path d="M3 15c2-6 8-9 15-8 2 .3 3 2 2 3.5C18 15 11 18 5 18c-1.5 0-2.5-1.5-2-3z"/><path d="M8 11l3 4M12 9l3 4"/>',
   refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/>',
+  expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
 };
 
 export function icon(name, cls = "") {
@@ -90,6 +93,66 @@ export function levelBadge(level) {
   if (level === "AGOTADO") return `<span class="badge badge-critical">${icon("ban")}Agotado</span>`;
   if (level === "BAJO") return `<span class="badge badge-warning">${icon("alert")}Stock bajo</span>`;
   return `<span class="badge badge-good">${icon("checkCircle")}Bien</span>`;
+}
+
+/* ───────────── Tema claro / oscuro ───────────── */
+const THEME_KEY = "marea-tema";
+const darkQuery = matchMedia("(prefers-color-scheme: dark)");
+
+/** Tema que se ve ahora: el elegido por la persona o, si no eligió, el del equipo. */
+export function effectiveTheme() {
+  const chosen = document.documentElement.dataset.theme;
+  if (chosen === "light" || chosen === "dark") return chosen;
+  return darkQuery.matches ? "dark" : "light";
+}
+
+function syncThemeButtons() {
+  const current = effectiveTheme();
+  $$("[data-theme-set]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.themeSet === current)));
+}
+
+/** Cambia el tema, lo recuerda en este navegador y avisa a las gráficas para que se repinten. */
+export function setTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    // Sin almacenamiento: el cambio dura mientras la página esté abierta.
+  }
+  syncThemeButtons();
+  window.dispatchEvent(new CustomEvent("marea:tema", { detail: { theme } }));
+}
+
+/** Botones Claro / Oscuro: «switch» con texto (menú) o «toggle» solo con iconos (entrada y tienda). */
+export function themeControl(variant = "toggle") {
+  const current = effectiveTheme();
+  const button = (theme, iconName, label) => {
+    const named = variant === "toggle" ? ` aria-label="Tema ${label.toLowerCase()}" title="Tema ${label.toLowerCase()}"` : "";
+    const text = variant === "switch" ? `<span>${label}</span>` : "";
+    return `<button type="button" data-theme-set="${theme}" aria-pressed="${current === theme}"${named}>${icon(iconName)}${text}</button>`;
+  };
+  const cls = variant === "switch" ? "theme-switch" : "theme-toggle";
+  return `<div class="${cls}" role="group" aria-label="Tema de la pantalla">${button("light", "sun", "Claro")}${button("dark", "moon", "Oscuro")}</div>`;
+}
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-theme-set]");
+  if (button) setTheme(button.dataset.themeSet);
+});
+darkQuery.addEventListener("change", () => {
+  // Solo importa si la persona no eligió: entonces la página sigue al equipo.
+  if (document.documentElement.dataset.theme) return;
+  syncThemeButtons();
+  window.dispatchEvent(new CustomEvent("marea:tema", { detail: { theme: effectiveTheme() } }));
+});
+
+/** Olas del menú (decorativas): cinco líneas de marea con desfase. */
+function sidebarWaves() {
+  const paths = [24, 54, 84, 114, 144].map((y, index) => {
+    const lift = y - 14 + (index % 2) * 6;
+    return `<path d="M-10 ${y} C 30 ${lift}, 70 ${y + 14}, 125 ${y} S 215 ${y - 14}, 270 ${y}" opacity="${(1 - index * 0.14).toFixed(2)}"/>`;
+  });
+  return `<svg class="sidebar-waves" viewBox="0 0 260 180" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">${paths.join("")}</g></svg>`;
 }
 
 /* ───────────── API ───────────── */
@@ -232,7 +295,7 @@ export async function startShell(pageId, permission) {
   }
   const initials = data.user.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   const sidebar = $(".sidebar");
-  sidebar.innerHTML = `
+  sidebar.innerHTML = `${sidebarWaves()}
     <a class="brand" href="/app/pedidos" aria-label="Marea — inicio">
       <span class="brand-mark">${icon("wave")}</span>
       <span><span class="brand-name">Marea</span><br><span class="brand-business">${esc(data.businessName)}</span></span>
@@ -246,6 +309,7 @@ export async function startShell(pageId, permission) {
         )
         .join("")}
     </nav>
+    ${themeControl("switch")}
     <div class="sidebar-foot">
       <span class="avatar" aria-hidden="true">${esc(initials)}</span>
       <span class="who"><strong>${esc(data.user.name)}</strong><span>${esc(data.user.roleLabel)}</span></span>

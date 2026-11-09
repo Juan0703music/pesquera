@@ -225,3 +225,44 @@
   width: 100%;
   margin-top: 12px;
 }
+.store-hero {
+  background: linear-gradient(180deg, var(--abyss-1) 0%, var(--abyss-2) 100%);
+}
+.store-hero h1 {
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+.store-theme {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 2;
+}
+.price {
+  font-family: var(--font-display);
+}
+.product {
+  transition: box-shadow 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.product:hover {
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
+}
+.product-art {
+  background: linear-gradient(160deg, var(--brand-soft), var(--surface-2));
+  color: var(--brand-soft-ink);
+}
+.chips a {
+  border-color: var(--border-strong);
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+}
+.chips a:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+/* La tienda no lleva el resplandor del panel: la franja pegajosa de categorías lo cortaría. */
+body:has(.store-hero) {
+  background: var(--page);
+}

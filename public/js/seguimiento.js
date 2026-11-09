@@ -1,4 +1,6 @@
-import { $, esc, fmt, icon, LABELS } from "/js/core.js";
+import { $, esc, fmt, icon, LABELS, themeControl } from "/js/core.js";
+
+$("#theme").innerHTML = themeControl("toggle");
 
 const STEPS = ["RECIBIDO", "ALISTANDO", "LISTO", "DESPACHADO", "ENTREGADO"];
 const [id, key] = location.hash.slice(1).split(".");

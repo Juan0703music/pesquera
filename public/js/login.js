@@ -1,4 +1,4 @@
-import { $, $$, api, ApiError, esc, icon, showFieldErrors } from "/js/core.js";
+import { $, $$, api, ApiError, esc, icon, showFieldErrors, themeControl } from "/js/core.js";
 
 const ROLE_ICON = { ADMIN: "settings", VENTAS: "cash", DESPACHO: "truck", BODEGA: "box" };
 const back = () => {
@@ -7,6 +7,7 @@ const back = () => {
 };
 
 $("#mark").innerHTML = icon("wave");
+$("#theme").innerHTML = themeControl("toggle");
 
 function setMode(mode) {
   $(`input[name="mode"][value="${mode}"]`).checked = true;

@@ -36,7 +36,7 @@ function render() {
     $("#table").innerHTML = '<div class="empty">No hay productos con ese filtro.</div>';
     return;
   }
-  $("#table").innerHTML = `<table class="table">
+  $("#table").innerHTML = `<table class="table table-dense">
     <thead><tr><th>Producto</th><th class="right">Existencia</th><th class="right">Comprometido</th><th class="right">Disponible</th><th class="right">Mínimo</th><th>Nivel</th><th class="right">Precio</th>${showCost ? '<th class="right">Costo prom.</th><th class="right">Valor</th>' : ""}<th></th></tr></thead>
     <tbody>${products.map((product) => `
       <tr>

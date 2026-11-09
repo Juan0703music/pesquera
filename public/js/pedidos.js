@@ -63,8 +63,8 @@ function renderBoard() {
   $("#board").innerHTML = COLUMNS.map((column) => {
     const orders = visible.filter((order) => order.status === column.status);
     return `
-      <section class="column" aria-label="${column.title}">
-        <div class="column-head">${icon(column.icon)}${column.title}<span class="badge count">${orders.length}</span></div>
+      <section class="column" data-stage="${column.status}" aria-label="${column.title}">
+        <div class="column-head"><span class="stage-dot" aria-hidden="true"></span>${column.title}<span class="badge count">${orders.length}</span></div>
         <div class="column-list">${orders.map(card).join("") || '<div class="empty">Nada por aquí.</div>'}</div>
       </section>`;
   }).join("");

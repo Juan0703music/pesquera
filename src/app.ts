@@ -28,6 +28,7 @@ z.config(z.locales.es());
 
 const publicDir = fileURLToPath(new URL("../public", import.meta.url));
 const threeDir = fileURLToPath(new URL("../node_modules/three/build", import.meta.url));
+const fontsDir = fileURLToPath(new URL("../node_modules/@fontsource-variable/bricolage-grotesque/files", import.meta.url));
 
 /** Páginas públicas (tienda en línea e inicio de sesión del equipo). */
 const PUBLIC_PAGES: Record<string, string> = {
@@ -112,6 +113,8 @@ export function createApp() {
 
   // Three.js para las gráficas 3D (servido desde node_modules, sin CDN).
   app.use("/vendor/three", express.static(threeDir, { maxAge: "7d", index: false }));
+  // Tipografía de títulos y cifras (Bricolage Grotesque), también sin CDN.
+  app.use("/vendor/fonts", express.static(fontsDir, { maxAge: "30d", index: false, immutable: true }));
   app.use(express.static(publicDir, { index: false, maxAge: env.NODE_ENV === "production" ? "1h" : 0 }));
 
   for (const [route, file] of Object.entries(PUBLIC_PAGES)) {

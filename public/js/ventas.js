@@ -59,7 +59,7 @@ async function load() {
       </div>`;
     $("#top").innerHTML = rank(data.topProducts, (row) => `${fmt.qty(row.qtyMilli, row.unit)} · ${fmt.cop(row.total)}`);
     $("#sources").innerHTML = rank(data.bySource.map((row) => ({ ...row, name: LABELS.source[row.source] })), (row) => `${row.count} · ${fmt.cop(row.total)}`);
-    requestAnimationFrame(() => $$("[data-w]").forEach((node) => node.style.setProperty("--w", `${node.dataset.w}%`)));
+    requestAnimationFrame(() => $$("[data-w]").forEach((node) => node.style.setProperty("--s", String(Number(node.dataset.w) / 100))));
   } catch (error) {
     showError(error);
   }

@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>En vivo</title>
+    <script src="/js/theme.js"></script>
     <link rel="stylesheet" href="/css/app.css" />
     <script src="/socket.io/socket.io.min.js" defer></script>
     <script type="module" src="/js/en-vivo.js"></script>
@@ -20,6 +21,7 @@
           <span class="live-pill" id="live-pill" data-state="connecting"><span class="live-dot"></span><span>Conectando…</span></span>
           <div class="spacer"></div>
           <span class="clock" id="clock"></span>
+          <button class="btn" id="wall" aria-pressed="false" title="Mostrar el tablero a pantalla completa (por ejemplo, en el televisor)"></button>
         </div>
 
         <div class="stats stats-4" id="kpis"></div>
