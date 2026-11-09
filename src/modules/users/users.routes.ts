@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../../config/database.js";
 import { getAuth, requirePermission } from "../../middlewares/authenticate.js";
 import { validate } from "../../middlewares/validate.js";
+import { live } from "../../services/live.service.js";
 import { badRequest, conflict } from "../../utils/errors.js";
 import { hashPassword } from "../../utils/password.js";
 import { authService } from "../auth/auth.service.js";
@@ -27,14 +28,14 @@ const UpdateUserSchema = z.object({
 
 const IdParams = z.object({ id: z.uuid("Identificador inválido.") });
 
-const select = { id: true, name: true, email: true, role: true, active: true, createdAt: true } as const;
+const select = { id: true, name: true, email: true, role: true, active: true, pendingApproval: true, createdAt: true } as const;
 const toDto = <T extends { role: keyof typeof ROLE_LABELS }>(user: T) => ({ ...user, roleLabel: ROLE_LABELS[user.role] });
 
 export const usersRoutes = Router();
 usersRoutes.use(requirePermission("admin.manage"));
 
 usersRoutes.get("/", async (_req, res) => {
-  const users = await prisma.user.findMany({ select, orderBy: [{ active: "desc" }, { name: "asc" }] });
+  const users = await prisma.user.findMany({ select, orderBy: [{ pendingApproval: "desc" }, { active: "desc" }, { name: "asc" }] });
   res.json({ data: users.map(toDto) });
 });
 
@@ -62,11 +63,23 @@ usersRoutes.patch("/:id", validate({ params: IdParams, body: UpdateUserSchema })
       name: input.name,
       role: input.role,
       active: input.active,
+      // Activar una solicitud de acceso es aprobarla.
+      ...(input.active === true ? { pendingApproval: false } : {}),
       ...(input.password ? { passwordHash: await hashPassword(input.password) } : {}),
     },
     select,
   });
   // Al desactivarlo, cambiarle el rol o la contraseña, sus sesiones abiertas se cierran.
   if (input.active === false || input.password || input.role) await authService.revokeAll(id);
+  live.emit("users", "user.updated");
   res.json({ data: toDto(user) });
+});
+
+/** Rechaza una solicitud de acceso (solo cuentas que nunca fueron aprobadas). */
+usersRoutes.delete("/:id", validate({ params: IdParams }), async (req, res) => {
+  const { id } = req.params as z.infer<typeof IdParams>;
+  const { count } = await prisma.user.deleteMany({ where: { id, pendingApproval: true } });
+  if (count === 0) throw conflict("Solo se pueden rechazar solicitudes pendientes. Para quitarle el acceso a alguien, desactívalo.", "NOT_PENDING");
+  live.emit("users", "user.rejected");
+  res.status(204).end();
 });

@@ -26,6 +26,14 @@ Recibe pedidos, los despacha con el **peso real**, lleva el **inventario por kil
 - Cada salida guarda el costo promedio del momento: así se calcula la ganancia estimada del día.
 - «Hoy» es el día en Colombia (`TIME_ZONE`), no el de UTC.
 
+### Cuentas del equipo
+
+- **Primera vez:** si todavía no hay nadie registrado, la pantalla de entrada pide crear la cuenta del **administrador**.
+- **Después:** cada persona del equipo se registra en «Crear cuenta» y elige su puesto. Queda **pendiente** y no puede
+  entrar hasta que el administrador la apruebe en **Personal**, donde también le confirma o le cambia el rol.
+  Así nadie de afuera puede registrarse y ver ventas, clientes o inventario.
+- El administrador también puede crear cuentas directamente en «Personal → Agregar persona».
+
 ### Roles
 
 | Rol | Puede |
@@ -48,7 +56,8 @@ npm run dev               # terminal 2: http://localhost:3100
 npm run demo:live         # opcional, terminal 3: simula pedidos y despachos para ver el tablero moverse
 ```
 
-Usuarios de la demostración (contraseña `marea12345`): `admin@pesquera.test`, `ventas@pesquera.test`,
+En desarrollo, la pantalla de entrada muestra botones de **Modo demostración** para entrar con un clic como cada puesto
+(nunca en producción). Usuarios de la demostración (contraseña `marea12345`): `admin@pesquera.test`, `ventas@pesquera.test`,
 `despacho@pesquera.test`, `bodega@pesquera.test`. Para volver a empezar: `SEED_RESET=1 npm run db:seed`.
 
 ## Pruebas

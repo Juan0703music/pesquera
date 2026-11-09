@@ -18,17 +18,49 @@
         </div>
       </section>
       <section class="auth-form">
-        <form id="login" class="stack" novalidate>
+        <div class="auth-box stack">
           <div>
-            <h2>Entrar al panel</h2>
+            <h2 id="auth-title">Entrar al panel</h2>
             <p class="muted" id="business"></p>
           </div>
-          <label class="field"><span>Correo</span><input class="input" name="email" type="email" autocomplete="username" required /></label>
-          <label class="field"><span>Contraseña</span><input class="input" name="password" type="password" autocomplete="current-password" required /></label>
-          <div class="error-box" id="error" hidden></div>
-          <button class="btn btn-primary btn-lg" type="submit">Entrar</button>
+
+          <div class="segmented auth-tabs" role="tablist" aria-label="Entrar o crear cuenta" id="tabs">
+            <label><input type="radio" name="mode" value="login" checked /><span>Entrar</span></label>
+            <label><input type="radio" name="mode" value="register" /><span>Crear cuenta</span></label>
+          </div>
+
+          <form id="login" class="stack" novalidate>
+            <label class="field"><span>Correo</span><input class="input" name="email" type="email" autocomplete="username" required /></label>
+            <label class="field"><span>Contraseña</span><input class="input" name="password" type="password" autocomplete="current-password" required /></label>
+            <label class="check"><input type="checkbox" data-show-password /> Mostrar contraseña</label>
+            <div class="error-box" id="login-error" hidden></div>
+            <button class="btn btn-primary btn-lg" type="submit">Entrar</button>
+          </form>
+
+          <form id="register" class="stack" novalidate hidden>
+            <div class="warn-box" id="setup-note" hidden>Es la primera cuenta de la pesquera: será la del <strong>administrador</strong>, con acceso a todo. Después, el resto del equipo se registra aquí y tú lo apruebas en «Personal».</div>
+            <label class="field"><span>Nombre completo</span><input class="input" name="name" autocomplete="name" required maxlength="80" /></label>
+            <label class="field"><span>Correo</span><input class="input" name="email" type="email" autocomplete="email" required /></label>
+            <label class="field"><span>Contraseña (mínimo 8 caracteres)</span><input class="input" name="password" type="password" autocomplete="new-password" required minlength="8" /></label>
+            <label class="check"><input type="checkbox" data-show-password /> Mostrar contraseña</label>
+            <label class="field" id="role-field"><span>¿Cuál es tu puesto?</span>
+              <select class="input" name="role"><option value="VENTAS">Ventas (recibo pedidos y cobro)</option><option value="DESPACHO">Despacho (alisto, peso y despacho)</option><option value="BODEGA">Bodega (entradas y conteos)</option></select>
+            </label>
+            <div class="error-box" id="register-error" hidden></div>
+            <button class="btn btn-primary btn-lg" type="submit" id="register-submit">Crear cuenta</button>
+            <p class="muted" id="register-help">El administrador de la pesquera debe aprobar tu cuenta antes de que puedas entrar.</p>
+          </form>
+
+          <div class="card-body done-box" id="register-done" hidden></div>
+
+          <section class="demo-box" id="demo" hidden aria-labelledby="demo-title">
+            <h3 id="demo-title">Modo demostración</h3>
+            <p class="muted">Entra con un clic como cada puesto (solo en este computador de desarrollo).</p>
+            <div class="demo-grid" id="demo-users"></div>
+          </section>
+
           <a class="muted" href="/tienda">Ir a la tienda en línea</a>
-        </form>
+        </div>
       </section>
     </div>
   </body>

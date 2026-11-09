@@ -100,6 +100,8 @@ model User {
   passwordHash String   @map("password_hash")
   role         Role
   active       Boolean  @default(true)
+  /// Se registró desde el inicio de sesión y espera que el administrador la apruebe (mientras tanto, active = false).
+  pendingApproval Boolean @default(false) @map("pending_approval")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 

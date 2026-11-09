@@ -21,11 +21,12 @@ export const authService = {
     const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
     const valid = user ? await verifyPassword(user.passwordHash, password) : await verifyAgainstDummy(password);
     if (!user || !valid) throw unauthorized("Correo o contraseña incorrectos.", "INVALID_CREDENTIALS");
+    if (user.pendingApproval) {
+      throw unauthorized("Tu cuenta está esperando que el administrador la apruebe. Te avisará cuando puedas entrar.", "ACCOUNT_PENDING");
+    }
     if (!user.active) throw unauthorized("Tu usuario está desactivado. Habla con el administrador.", "USER_INACTIVE");
 
-    const token = generateToken();
-    const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-    await prisma.session.create({ data: { userId: user.id, tokenHash: hashToken(token), userAgent: userAgent?.slice(0, 255), expiresAt } });
+    const { token, expiresAt } = await authService.openSession(user.id, userAgent);
     await prisma.session.deleteMany({
       where: { userId: user.id, OR: [{ expiresAt: { lt: new Date() } }, { createdAt: { lt: new Date(Date.now() - SESSION_MAX_LIFETIME_MS) } }] },
     });
@@ -51,6 +52,14 @@ export const authService = {
     }
     const { user } = session;
     return { auth: { userId: user.id, sessionId: session.id, name: user.name, role: user.role }, renewedExpiresAt };
+  },
+
+  /** Abre una sesión para un usuario ya validado (p. ej. el administrador recién creado). */
+  async openSession(userId: string, userAgent?: string) {
+    const token = generateToken();
+    const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+    await prisma.session.create({ data: { userId, tokenHash: hashToken(token), userAgent: userAgent?.slice(0, 255), expiresAt } });
+    return { token, expiresAt };
   },
 
   async logout(sessionId: string) {

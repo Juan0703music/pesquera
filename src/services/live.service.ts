@@ -4,7 +4,7 @@ import { EventEmitter } from "node:events";
  * Avisos de cambios para las pantallas en vivo (Socket.IO los reenvía al equipo).
  * Solo avisan: PostgreSQL es la fuente de verdad y las pantallas vuelven a consultar la API.
  */
-export type LiveScope = "orders" | "inventory" | "catalog" | "settings";
+export type LiveScope = "orders" | "inventory" | "catalog" | "settings" | "users";
 
 export interface LiveEvent {
   scope: LiveScope;

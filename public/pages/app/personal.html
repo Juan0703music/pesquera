@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Personal</title>
     <link rel="stylesheet" href="/css/app.css" />
+    <script src="/socket.io/socket.io.min.js" defer></script>
     <script type="module" src="/js/personal.js"></script>
   </head>
   <body>
@@ -13,9 +14,14 @@
       <main class="main">
         <div class="page-head">
           <div><h1>Personal</h1><div class="sub">Quién entra al panel y qué puede hacer según su puesto.</div></div>
+          <span class="live-pill" id="live-pill" data-state="connecting"><span class="live-dot"></span><span>Conectando…</span></span>
           <div class="spacer"></div>
           <button class="btn btn-primary" id="btn-new"></button>
         </div>
+        <section class="card requests" id="requests" hidden>
+          <div class="card-head"><h2>Solicitudes de acceso</h2><span class="badge badge-warning" id="requests-count"></span><div class="spacer"></div><span class="muted">Se registraron desde la pantalla de entrada. Elige su rol y apruébalas.</span></div>
+          <div class="card-body table-wrap" id="requests-list"></div>
+        </section>
         <div class="dash">
           <section class="card"><div class="table-wrap" id="users"></div></section>
           <section class="card">

@@ -7,6 +7,7 @@
  * En producción no se ejecuta.
  */
 import { randomUUID } from "node:crypto";
+import { DEMO_PASSWORD, DEMO_USERS } from "../src/config/demo.js";
 import { prisma } from "../src/config/database.js";
 import { env, isProduction } from "../src/config/env.js";
 import type { Prisma } from "../src/generated/prisma/client.js";
@@ -21,13 +22,7 @@ if (isProduction) {
   process.exit(1);
 }
 
-export const DEMO_PASSWORD = "marea12345";
-export const DEMO_USERS = [
-  { name: "Luz Marina Pérez", email: "admin@pesquera.test", role: "ADMIN" },
-  { name: "Carlos Mendoza", email: "ventas@pesquera.test", role: "VENTAS" },
-  { name: "Yeison Arrieta", email: "despacho@pesquera.test", role: "DESPACHO" },
-  { name: "Rafael Banquez", email: "bodega@pesquera.test", role: "BODEGA" },
-] as const;
+
 
 interface DemoProduct {
   name: string;

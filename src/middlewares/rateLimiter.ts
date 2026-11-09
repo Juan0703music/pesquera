@@ -20,3 +20,6 @@ export const storeOrderLimiter = rateLimit({ ...common, windowMs: 10 * 60_000, l
 
 /** Seguimiento de un pedido de la tienda (la pantalla consulta cada pocos segundos). */
 export const trackingLimiter = rateLimit({ ...common, windowMs: 10 * 60_000, limit: 300 });
+
+/** Registro de cuentas desde el inicio de sesión. */
+export const registerLimiter = rateLimit({ ...common, windowMs: 60 * 60_000, limit: 10 });

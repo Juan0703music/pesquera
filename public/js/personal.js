@@ -1,4 +1,4 @@
-import { $, $$, api, ApiError, esc, icon, openDialog, session, showError, showFieldErrors, startShell, toast } from "/js/core.js";
+import { $, $$, api, ApiError, connectLive, debounce, esc, icon, openDialog, session, setPendingCount, showError, showFieldErrors, startShell, toast } from "/js/core.js";
 
 const ROLES = {
   ADMIN: ["Administrador", "Todo: pedidos, inventario, precios, ventas, tablero en vivo, personal y ajustes."],
@@ -9,9 +9,29 @@ const ROLES = {
 let users = [];
 let editing = null;
 
+function renderRequests() {
+  const pending = users.filter((user) => user.pendingApproval);
+  setPendingCount(pending.length);
+  $("#requests").hidden = pending.length === 0;
+  $("#requests-count").textContent = `${pending.length} por aprobar`;
+  $("#requests-list").innerHTML = `<table class="table"><thead><tr><th>Persona</th><th>Pidió</th><th>Rol al aprobar</th><th>Fecha</th><th></th></tr></thead><tbody>
+    ${pending.map((user) => `<tr>
+      <td><strong>${esc(user.name)}</strong><br><span class="muted">${esc(user.email)}</span></td>
+      <td>${esc(user.roleLabel)}</td>
+      <td><label class="sr-only" for="role-${user.id}">Rol para ${esc(user.name)}</label><select class="input input-inline" id="role-${user.id}">
+        ${Object.entries(ROLES).map(([value, [label]]) => `<option value="${value}" ${value === user.role ? "selected" : ""}>${label}</option>`).join("")}
+      </select></td>
+      <td class="muted">${new Date(user.createdAt).toLocaleString("es-CO", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</td>
+      <td class="actions"><button class="btn btn-sm btn-primary" data-approve="${user.id}">${icon("check", "icon-sm")}Aprobar</button> <button class="btn btn-sm btn-danger" data-reject="${user.id}">Rechazar</button></td>
+    </tr>`).join("")}
+  </tbody></table>`;
+}
+
 function render() {
+  renderRequests();
+  const team = users.filter((user) => !user.pendingApproval);
   $("#users").innerHTML = `<table class="table"><thead><tr><th>Persona</th><th>Rol</th><th>Estado</th><th>Desde</th><th></th></tr></thead><tbody>
-    ${users.map((user) => `<tr>
+    ${team.map((user) => `<tr>
       <td><strong>${esc(user.name)}</strong>${user.id === session.user.id ? ' <span class="badge badge-brand">Tú</span>' : ""}<br><span class="muted">${esc(user.email)}</span></td>
       <td>${esc(user.roleLabel)}</td>
       <td>${user.active ? `<span class="badge badge-good">${icon("checkCircle")}Activo</span>` : `<span class="badge">${icon("ban")}Inactivo</span>`}</td>
@@ -76,8 +96,30 @@ $$("[data-close]").forEach((node) => {
 });
 $("#roles").innerHTML = Object.values(ROLES).map(([name, text]) => `<div><strong>${name}</strong><div class="muted">${text}</div></div>`).join("");
 $("#user-form").addEventListener("submit", submit);
+$("#requests-list").addEventListener("click", async (event) => {
+  const approve = event.target.closest("[data-approve]");
+  const reject = event.target.closest("[data-reject]");
+  const id = approve?.dataset.approve ?? reject?.dataset.reject;
+  if (!id) return;
+  const user = users.find((item) => item.id === id);
+  try {
+    if (approve) {
+      await api(`/users/${id}`, { method: "PATCH", body: { active: true, role: $(`#role-${id}`).value } });
+      toast(`${user.name} ya puede entrar al panel.`);
+    } else {
+      if (!confirm(`¿Rechazar la solicitud de ${user.name}? Se borrará y no podrá entrar.`)) return;
+      await api(`/users/${id}`, { method: "DELETE" });
+      toast(`Solicitud de ${user.name} rechazada.`);
+    }
+    await load();
+  } catch (error) {
+    showError(error);
+  }
+});
 $("#users").addEventListener("click", (event) => {
   const button = event.target.closest("[data-edit]");
   if (button) open(users.find((user) => user.id === button.dataset.edit));
 });
 await load().catch(showError);
+const reload = debounce(() => load().catch(() => {}), 300);
+connectLive((event) => (event.scope === "users" || event.scope === "all") && reload());

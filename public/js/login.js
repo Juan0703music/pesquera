@@ -1,24 +1,115 @@
-import { $, api, icon } from "/js/core.js";
+import { $, $$, api, ApiError, esc, icon, showFieldErrors } from "/js/core.js";
+
+const ROLE_ICON = { ADMIN: "settings", VENTAS: "cash", DESPACHO: "truck", BODEGA: "box" };
+const back = () => {
+  const target = new URLSearchParams(location.search).get("volver");
+  return target && target.startsWith("/app/") ? target : "/app/pedidos";
+};
 
 $("#mark").innerHTML = icon("wave");
-api("/store").then(({ data }) => ($("#business").textContent = data.business.name)).catch(() => {});
+
+function setMode(mode) {
+  $(`input[name="mode"][value="${mode}"]`).checked = true;
+  $("#login").hidden = mode !== "login";
+  $("#register").hidden = mode !== "register";
+  $("#register-done").hidden = true;
+  $("#auth-title").textContent = mode === "login" ? "Entrar al panel" : $("#setup-note").hidden ? "Crear cuenta" : "Configura tu pesquera";
+  (mode === "login" ? $("#login").email : $("#register").name).focus();
+}
+
+$$('input[name="mode"]').forEach((input) => input.addEventListener("change", () => setMode(input.value)));
+$$("[data-show-password]").forEach((box) =>
+  box.addEventListener("change", () => (box.closest("form").password.type = box.checked ? "text" : "password")),
+);
+
+async function login(email, password, errorBox) {
+  errorBox.hidden = true;
+  try {
+    await api("/auth/login", { method: "POST", body: { email, password } });
+    location.href = back();
+  } catch (error) {
+    errorBox.textContent = error.message;
+    errorBox.hidden = false;
+  }
+}
 
 $("#login").addEventListener("submit", async (event) => {
   event.preventDefault();
   const form = event.currentTarget;
-  const button = form.querySelector("button");
-  $("#error").hidden = true;
+  const button = form.querySelector("button[type=submit]");
+  button.disabled = true;
+  await login(form.email.value.trim(), form.password.value, $("#login-error"));
+  button.disabled = false;
+});
+
+$("#register").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = $("#register-submit");
+  $("#register-error").hidden = true;
+  showFieldErrors(form, null);
   button.disabled = true;
   try {
-    await api("/auth/login", { method: "POST", body: { email: form.email.value, password: form.password.value } });
-    const back = new URLSearchParams(location.search).get("volver");
-    location.href = back && back.startsWith("/app/") ? back : "/app/pedidos";
+    const { data } = await api("/auth/register", {
+      method: "POST",
+      body: { name: form.name.value.trim(), email: form.email.value.trim(), password: form.password.value, role: form.role.value },
+    });
+    if (data.status === "ACTIVE") {
+      // Primera cuenta: es el administrador y ya tiene la sesión abierta.
+      location.href = "/app/ajustes";
+      return;
+    }
+    form.hidden = true;
+    $("#tabs").hidden = true;
+    $("#auth-title").textContent = "¡Cuenta creada!";
+    $("#register-done").hidden = false;
+    $("#register-done").innerHTML = `<div class="stack"><p>${icon("checkCircle")} <strong>${esc(form.name.value.trim())}</strong>, tu solicitud quedó registrada.</p>
+      <p class="muted">El administrador de la pesquera debe aprobarla en «Personal». Cuando lo haga, entra con tu correo <strong>${esc(form.email.value.trim())}</strong> y tu contraseña.</p>
+      <button class="btn" type="button" id="go-login">Volver a entrar</button></div>`;
+    $("#go-login").addEventListener("click", () => {
+      $("#tabs").hidden = false;
+      $("#login").email.value = form.email.value.trim();
+      form.reset();
+      form.hidden = false;
+      setMode("login");
+    });
   } catch (error) {
-    $("#error").textContent = error.message;
-    $("#error").hidden = false;
+    if (!showFieldErrors(form, error)) {
+      $("#register-error").textContent = error instanceof ApiError ? error.message : "No se pudo crear la cuenta.";
+      $("#register-error").hidden = false;
+    }
+  } finally {
     button.disabled = false;
   }
 });
+
+try {
+  const { data } = await api("/auth/status");
+  $("#business").textContent = data.businessName ?? "";
+  if (data.needsSetup) {
+    // Sistema nuevo: solo se puede crear la cuenta del administrador.
+    $("#setup-note").hidden = false;
+    $("#role-field").hidden = true;
+    $("#register-help").hidden = true;
+    $("#register-submit").textContent = "Crear cuenta de administrador";
+    $("#tabs").hidden = true;
+    setMode("register");
+  }
+  if (data.demo) {
+    $("#demo").hidden = false;
+    $("#demo-users").innerHTML = data.demo.users
+      .map((user) => `<button class="btn demo-user" type="button" data-email="${esc(user.email)}">${icon(ROLE_ICON[user.role] ?? "users")}<span><strong>${esc(user.roleLabel)}</strong><small>${esc(user.name)}</small></span></button>`)
+      .join("");
+    $("#demo-users").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-email]");
+      if (!button) return;
+      $$("#demo-users button").forEach((node) => (node.disabled = true));
+      login(button.dataset.email, data.demo.password, $("#login-error")).finally(() => $$("#demo-users button").forEach((node) => (node.disabled = false)));
+    });
+  }
+} catch {
+  // Sin estado (servidor caído): el formulario de entrada sigue disponible y mostrará el error al enviarlo.
+}
 
 // Olas: capas de senos que se desplazan despacio (se detienen si la persona prefiere menos movimiento).
 const canvas = $("#waves");

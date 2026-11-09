@@ -242,7 +242,7 @@ export async function startShell(pageId, permission) {
         .map((item) =>
           item.sep
             ? '<div class="nav-sep" role="separator"></div>'
-            : `<a href="${item.href}" ${item.id === pageId ? 'aria-current="page"' : ""} ${item.external ? 'target="_blank" rel="noopener"' : ""}>${icon(item.icon)}<span>${item.label}</span>${item.id === "pedidos" ? '<span class="badge badge-count" id="nav-open-count" hidden></span>' : ""}</a>`,
+            : `<a href="${item.href}" ${item.id === pageId ? 'aria-current="page"' : ""} ${item.external ? 'target="_blank" rel="noopener"' : ""}>${icon(item.icon)}<span>${item.label}</span>${item.id === "pedidos" ? '<span class="badge badge-count" id="nav-open-count" hidden></span>' : ""}${item.id === "personal" ? '<span class="badge badge-count" id="nav-pending" title="Solicitudes de acceso por aprobar" hidden></span>' : ""}</a>`,
         )
         .join("")}
     </nav>
@@ -256,7 +256,16 @@ export async function startShell(pageId, permission) {
     location.href = "/login";
   });
   document.title = `${document.title.split(" · ")[0]} · ${data.businessName}`;
+  setPendingCount(data.pendingApprovals);
   return data;
+}
+
+/** Solicitudes de acceso por aprobar (solo el administrador las ve). */
+export function setPendingCount(count) {
+  const badge = $("#nav-pending");
+  if (!badge) return;
+  badge.hidden = !count;
+  badge.textContent = String(count ?? 0);
 }
 
 /** Contador de pedidos abiertos en el menú. */
@@ -289,7 +298,14 @@ export function connectLive(onChange, pill = $("#live-pill")) {
     if (error.message === "UNAUTHORIZED") location.href = "/login";
     setState("off", "Reconectando…");
   });
-  socket.on("change", onChange);
+  socket.on("change", (event) => {
+    // Alguien se registró o cambió una cuenta: el administrador lo ve en cualquier pantalla.
+    if (event.scope === "users" && can("admin.manage")) {
+      if (event.kind === "user.requested") toast("Nueva solicitud de acceso", { detail: `${event.data?.name ?? ""} · ${event.data?.role ?? ""}. Apruébala en «Personal».`, iconName: "users", timeout: 8000 });
+      api("/auth/me").then(({ data }) => setPendingCount(data.pendingApprovals)).catch(() => {});
+    }
+    onChange(event);
+  });
   // Al volver a conectarse, la pantalla se pone al día (pudo perderse algún aviso).
   socket.io.on("reconnect", () => onChange({ scope: "all", kind: "reconnect" }));
   return socket;
