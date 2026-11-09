@@ -10,6 +10,7 @@ import { formatCOP } from "../../utils/money.js";
 import { formatQty, lineTotal, toMilli } from "../../utils/quantity.js";
 import { generateToken, hashToken } from "../auth/auth.service.js";
 import { applyStockChange, committedByProduct, OPEN_STATUSES } from "../inventory/stock.js";
+import { paymentAccountsService } from "../payments/payment-accounts.service.js";
 import { getSettings } from "../settings/settings.routes.js";
 import type { CreateOrderInput, ItemInput, StoreOrderInput } from "./orders.schemas.js";
 
@@ -337,7 +338,14 @@ export const ordersService = {
   async track(id: string, key: string) {
     const order = await prisma.order.findUnique({ where: { id }, include: { items: { orderBy: { id: "asc" } }, events: { orderBy: { createdAt: "asc" } } } });
     if (!order || !order.trackingKeyHash || order.trackingKeyHash !== hashToken(key)) throw notFound("No encontramos ese pedido.");
+    // Dónde pagar (si eligió una forma de pago por transferencia) y si el valor ya es el definitivo:
+    // lo que va por kilo se pesa al alistar, así que antes del pesaje el total es estimado.
+    const open = order.status !== "CANCELADO" && order.paidAt === null;
+    const accounts = open ? await paymentAccountsService.forMethod(order.paymentMethod) : [];
+    const exact = order.status === "DESPACHADO" || order.status === "ENTREGADO" || order.items.every((item) => item.unit !== "KG" || item.actualQtyMilli !== null);
     return {
+      // El WhatsApp de la pesquera, para enviar el comprobante del pago.
+      payment: accounts.length ? { accounts, amountDue: order.total, exact, whatsapp: (await getSettings()).whatsapp } : null,
       id: order.id,
       number: order.number,
       status: order.status,

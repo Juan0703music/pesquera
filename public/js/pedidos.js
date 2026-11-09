@@ -1,6 +1,7 @@
 import {
   $, $$, api, ApiError, can, chime, connectLive, debounce, esc, fmt, icon, LABELS, openDialog, setOpenCount, showError, showFieldErrors, startShell, toast,
 } from "/js/core.js";
+import { bindCopy, copyText, payAccountHtml, paymentText } from "/js/pay.js";
 
 const COLUMNS = [
   { status: "RECIBIDO", title: "Recibidos", icon: "inbox" },
@@ -179,7 +180,8 @@ async function openDetail(id) {
           <select class="input input-inline" id="collect-method">
             ${Object.entries(LABELS.payment).map(([value, label]) => `<option value="${value}" ${value === order.paymentMethod && value !== "CREDITO" ? "selected" : ""}>${label}</option>`).join("")}
           </select>
-          <button class="btn btn-sm" id="collect">${icon("cash")}Registrar pago</button>` : ""}
+          <button class="btn btn-sm" id="collect">${icon("cash")}Registrar pago</button>
+          <button class="btn btn-sm btn-soft" id="show-pay">${icon("qr")}Cobrar con QR</button>` : ""}
       </div>
 
       <div class="section-title">Historial</div>
@@ -218,6 +220,7 @@ async function openDetail(id) {
       showError(error);
     }
   });
+  $("#show-pay")?.addEventListener("click", () => openPayDialog(order));
   $("#collect")?.addEventListener("click", async () => {
     try {
       const paymentMethod = $("#collect-method").value;
@@ -244,6 +247,35 @@ async function openDetail(id) {
       if (!showFieldErrors(event.currentTarget, error)) showError(error);
     }
   });
+}
+
+/* ───────────── Cobrar con QR ───────────── */
+let payAccounts = null;
+
+/**
+ * Muestra el QR y las llaves para que el cliente pague: en el mostrador lo escanea de la pantalla;
+ * por teléfono o domicilio se le envían los datos por WhatsApp.
+ */
+async function openPayDialog(order) {
+  try {
+    payAccounts ??= (await api("/payment-accounts")).data;
+  } catch (error) {
+    return showError(error);
+  }
+  const exact = ["DESPACHADO", "ENTREGADO"].includes(order.status) || order.items.every((item) => item.unit !== "KG" || item.actualQtyMilli !== null);
+  const text = paymentText({ number: order.number, total: order.total, exact }, payAccounts);
+  const body = $("#pay-body");
+  $("#pay-title").textContent = `Cobrar pedido #${order.number}`;
+  body.innerHTML = payAccounts.length
+    ? `<div class="amount-due"><span>${exact ? "Total a pagar" : "Total estimado"}</span><strong>${fmt.cop(order.total)}</strong>${exact ? "" : "<small>Hay productos por kilo sin pesar: el valor puede cambiar al pesarlos.</small>"}</div>
+       ${payAccounts.map((account) => payAccountHtml(account, { qr: "big" })).join("")}`
+    : `<div class="empty stack"><strong>No hay cuentas de cobro activas</strong><span>${can("admin.manage") ? 'Agrégalas en <a href="/app/cobros">Cuentas de cobro</a>: tu llave Bre-B, Nequi o el QR de tu banco.' : "Pídele al administrador que agregue la llave Bre-B o el Nequi de la pesquera."}</span></div>`;
+  $("#pay-copy").hidden = !payAccounts.length;
+  $("#pay-copy").onclick = async () => toast((await copyText(text)) ? "Datos de pago copiados: pégalos en el chat del cliente." : "No se pudo copiar.", { error: false });
+  const whatsapp = $("#pay-whatsapp");
+  whatsapp.hidden = !payAccounts.length || !order.customerPhone;
+  if (order.customerPhone) whatsapp.href = `https://wa.me/${order.customerPhone}?text=${encodeURIComponent(text)}`;
+  openDialog($("#pay-dialog"));
 }
 
 /* ───────────── Pedido nuevo ───────────── */
@@ -484,6 +516,7 @@ $("#closed").addEventListener("click", (event) => {
   if (row) openDetail(row.dataset.open);
 });
 $("#detail-dialog").addEventListener("close", () => (state.openId = null));
+bindCopy($("#pay-body"));
 $("#search").addEventListener("input", renderBoard);
 $$('input[name="filter-delivery"]').forEach((input) => input.addEventListener("change", renderBoard));
 
@@ -501,4 +534,6 @@ connectLive((event) => {
     }
   }
   if ((event.scope === "inventory" || event.scope === "catalog") && can("orders.create")) loadProducts().catch(() => {});
+  // Cambió una cuenta de cobro: la próxima vez se vuelven a pedir.
+  if (event.scope === "settings") payAccounts = null;
 });

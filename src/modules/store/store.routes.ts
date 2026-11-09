@@ -7,6 +7,7 @@ import { badRequest } from "../../utils/errors.js";
 import { committedByProduct } from "../inventory/stock.js";
 import { StoreOrderSchema, type StoreOrderInput } from "../orders/orders.schemas.js";
 import { ordersService } from "../orders/orders.service.js";
+import { paymentAccountsService } from "../payments/payment-accounts.service.js";
 import { getSettings } from "../settings/settings.routes.js";
 
 const IdParams = z.object({ id: z.uuid("Identificador inválido.") });
@@ -18,16 +19,19 @@ const IdParams = z.object({ id: z.uuid("Identificador inválido.") });
 export const storeRoutes = Router();
 
 storeRoutes.get("/", async (_req, res) => {
-  const [settings, categories, committed] = await Promise.all([
+  const [settings, categories, committed, payment] = await Promise.all([
     getSettings(),
     prisma.category.findMany({
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       include: { products: { where: { active: true, inStore: true }, orderBy: { name: "asc" } } },
     }),
     committedByProduct(prisma),
+    paymentAccountsService.forStore(),
   ]);
   res.set("Cache-Control", "no-store").json({
     data: {
+      // Cuentas para pagar por transferencia (llave Bre-B, Nequi, Daviplata, banco) y cuáles van con cada forma de pago.
+      payment,
       business: {
         name: settings.businessName, phone: settings.phone, whatsapp: settings.whatsapp, address: settings.address,
         open: settings.storeOpen, deliveryFee: settings.deliveryFee, minOrderTotal: settings.minOrderTotal,
@@ -55,6 +59,12 @@ storeRoutes.post("/orders", storeOrderLimiter, validate({ body: StoreOrderSchema
   if (input.website) throw badRequest("No pudimos recibir el pedido.", "SPAM");
   const { order, trackingKey } = await ordersService.createFromStore(input);
   res.status(201).json({ data: { id: order.id, number: order.number, total: order.total, trackingKey } });
+});
+
+/** QR de pago en PNG, para guardarlo y cargarlo en la app del banco desde el mismo celular. */
+storeRoutes.get("/payment-accounts/:id/qr.png", trackingLimiter, validate({ params: IdParams }), async (req, res) => {
+  const png = await paymentAccountsService.qrPng((req.params as z.infer<typeof IdParams>).id);
+  res.set("Cache-Control", "no-store").set("Content-Disposition", 'inline; filename="qr-de-pago.png"').type("png").send(png);
 });
 
 storeRoutes.get("/orders/:id", trackingLimiter, validate({ params: IdParams }), async (req, res) => {

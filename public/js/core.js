@@ -40,6 +40,10 @@ const PATHS = {
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   moon: '<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/>',
   expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h4v4h-4"/>',
+  copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+  download: '<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
+  upload: '<path d="M12 21V9M7 14l5-5 5 5M4 3h16"/>',
 };
 
 export function icon(name, cls = "") {
@@ -82,7 +86,7 @@ export const LABELS = {
   source: { MOSTRADOR: "Mostrador", TELEFONO: "Llamada", WHATSAPP: "WhatsApp", WEB: "Tienda en línea" },
   sourceIcon: { MOSTRADOR: "counter", TELEFONO: "phone", WHATSAPP: "chat", WEB: "globe" },
   delivery: { RECOGE: "Recoge", DOMICILIO: "Domicilio" },
-  payment: { EFECTIVO: "Efectivo", TRANSFERENCIA: "Transferencia", NEQUI: "Nequi", DATAFONO: "Datáfono", CREDITO: "Crédito" },
+  payment: { EFECTIVO: "Efectivo", TRANSFERENCIA: "Transferencia", NEQUI: "Nequi", BRE_B: "Llave Bre-B", DATAFONO: "Datáfono", CREDITO: "Crédito" },
   status: { RECIBIDO: "Recibido", ALISTANDO: "Alistando", LISTO: "Listo", DESPACHADO: "En camino", ENTREGADO: "Entregado", CANCELADO: "Cancelado" },
   movement: { ENTRADA: "Entrada", SALIDA_PEDIDO: "Salida por pedido", DEVOLUCION: "Devolución", AJUSTE: "Conteo (ajuste)", MERMA: "Merma" },
   level: { OK: "Bien", BAJO: "Stock bajo", AGOTADO: "Agotado" },
@@ -274,6 +278,7 @@ const NAV = [
   { href: "/app/en-vivo", label: "En vivo 3D", icon: "pulse", permission: "analytics.view", id: "en-vivo" },
   { sep: true },
   { href: "/app/personal", label: "Personal", icon: "users", permission: "admin.manage", id: "personal" },
+  { href: "/app/cobros", label: "Cuentas de cobro", icon: "qr", permission: "admin.manage", id: "cobros" },
   { href: "/app/ajustes", label: "Ajustes", icon: "settings", permission: "admin.manage", id: "ajustes" },
   { href: "/tienda", label: "Ver tienda", icon: "store", id: "tienda", external: true },
 ];

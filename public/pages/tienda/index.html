@@ -49,8 +49,9 @@
           </div>
           <label class="field" id="address-field"><span>Dirección</span><input class="input" name="customer.address" autocomplete="street-address" maxlength="200" placeholder="Barrio, calle, número, referencia" /></label>
           <label class="field"><span>Forma de pago</span>
-            <select class="input" name="paymentMethod"><option value="EFECTIVO">Efectivo al recibir</option><option value="NEQUI">Nequi</option><option value="TRANSFERENCIA">Transferencia</option><option value="DATAFONO">Datáfono al recibir</option></select>
+            <select class="input" name="paymentMethod"><option value="EFECTIVO">Efectivo al recibir</option><option value="NEQUI">Nequi</option><option value="TRANSFERENCIA">Transferencia bancaria</option><option value="DATAFONO">Datáfono al recibir</option></select>
           </label>
+          <div class="pay-info-box" id="pay-info" hidden></div>
           <label class="field"><span>Indicaciones (opcional)</span><input class="input" name="notes" maxlength="300" placeholder="Limpio, en postas, sin cabeza…" /></label>
           <input class="sr-only" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
           <p class="muted">Los productos por kilo se pesan al alistar: el total final puede variar un poco según el peso real.</p>

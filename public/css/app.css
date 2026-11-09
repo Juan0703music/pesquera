@@ -2217,3 +2217,330 @@ details.menu summary::-webkit-details-marker {
 .table-dense .product-cell {
   min-width: 0;
 }
+
+/* ───────────── Cuentas de pago (QR, llave Bre-B, Nequi, banco) ───────────── */
+.pay-account {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.pay-account + .pay-account {
+  margin-top: 10px;
+}
+.qr-box {
+  margin: 0;
+  padding: 10px;
+  border-radius: 12px;
+  /* El QR va siempre negro sobre blanco: así lo leen las cámaras en cualquier tema. */
+  background: #ffffff;
+  border: 1px solid #dde6ec;
+  line-height: 0;
+}
+.qr-box svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.qr-big {
+  width: 188px;
+}
+.qr-small {
+  width: 104px;
+}
+.pay-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.pay-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--muted);
+}
+.pay-kind .icon {
+  color: var(--brand);
+}
+.pay-key-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pay-key {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.pay-holder {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.pay-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 650;
+  min-height: 32px;
+}
+.amount-due {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border-radius: var(--radius);
+  background: var(--brand-soft);
+  color: var(--brand-soft-ink);
+}
+.amount-due strong {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.amount-due span {
+  font-weight: 650;
+}
+.amount-due small {
+  flex-basis: 100%;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+/* Pantalla «Cuentas de cobro». */
+.accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.account-card {
+  display: flex;
+  flex-direction: column;
+}
+.account-card .card-head {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.account-card .card-head h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.account-card .card-head h2 .icon {
+  width: 30px;
+  height: 30px;
+  padding: 6px;
+  border-radius: 9px;
+  background: var(--brand-soft);
+  color: var(--brand-soft-ink);
+}
+.account-card.is-hidden {
+  opacity: 0.72;
+}
+.account-body {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 16px;
+  padding: 18px 20px;
+  align-items: start;
+}
+.qr-drop {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  width: 150px;
+  min-height: 150px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px dashed var(--border-strong);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.18s var(--ease), background 0.18s var(--ease);
+}
+.qr-drop:hover,
+.qr-drop.is-over {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand-soft-ink);
+}
+.qr-drop .icon {
+  width: 26px;
+  height: 26px;
+}
+.qr-drop.is-busy {
+  pointer-events: none;
+  opacity: 0.6;
+}
+.account-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.account-meta .pay-key {
+  font-size: 21px;
+}
+.account-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 20px 16px;
+  border-top: 1px solid var(--border);
+}
+.account-foot .spacer {
+  flex: 1;
+}
+.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.switch .track {
+  width: 40px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  position: relative;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.switch .track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s var(--ease);
+}
+.switch input:checked + .track {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.switch input:checked + .track::after {
+  transform: translateX(16px);
+}
+.switch input:focus-visible + .track {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.howto {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+  counter-reset: paso;
+}
+.howto li {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+.howto li::before {
+  counter-increment: paso;
+  content: counter(paso);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--brand-soft);
+  color: var(--brand-soft-ink);
+  font-family: var(--font-display);
+  font-weight: 750;
+}
+.howto strong {
+  display: block;
+  color: var(--ink);
+}
+.qr-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.qr-preview img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #fff;
+}
+@media (max-width: 560px) {
+  .pay-account {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+  .qr-big {
+    width: min(240px, 100%);
+  }
+  .account-body {
+    grid-template-columns: 1fr;
+  }
+  .howto {
+    grid-template-columns: 1fr;
+  }
+}
+.pay-modal {
+  width: min(560px, calc(100vw - 32px));
+}
+.account-meta .badge {
+  white-space: normal;
+  min-height: 0;
+  padding: 4px 10px;
+  line-height: 1.35;
+  align-self: flex-start;
+}
+@media (max-width: 560px) {
+  .modal-foot .btn {
+    flex: 1 1 auto;
+  }
+}

@@ -1,4 +1,5 @@
 import { $, esc, fmt, icon, LABELS, themeControl } from "/js/core.js";
+import { bindCopy, payAccountHtml } from "/js/pay.js";
 
 $("#theme").innerHTML = themeControl("toggle");
 
@@ -48,8 +49,33 @@ async function load() {
       <div class="grand"><span>Total</span><span class="num">${fmt.cop(order.total)}</span></div>
     </div>
     <p class="muted">${LABELS.delivery[order.deliveryType]}${order.address ? ` · ${esc(order.address)}` : ""} · Pago: ${LABELS.payment[order.paymentMethod]}${order.paid ? " (pagado)" : ""}</p>`;
+  renderPayment(order);
   if (["ENTREGADO", "CANCELADO"].includes(order.status)) clearInterval(timer);
 }
 
+/** «Paga aquí»: el valor (exacto después del pesaje), las cuentas con su QR y el aviso del comprobante. */
+function renderPayment(order) {
+  const box = $("#payment");
+  const payment = order.payment;
+  box.hidden = !payment;
+  if (!payment) return;
+  const message = encodeURIComponent(`Hola, pagué el pedido #${order.number} por ${fmt.cop(payment.amountDue)}. Te envío el comprobante.`);
+  const html = `
+    <h2>Paga aquí</h2>
+    <div class="amount-due">
+      <span>${payment.exact ? "Total a pagar" : "Total estimado"}</span>
+      <strong>${fmt.cop(payment.amountDue)}</strong>
+      ${payment.exact ? "" : "<small>Lo que va por kilo se pesa al alistar: espera a que el pedido diga «Alistando» o «Listo» para pagar el valor exacto.</small>"}
+    </div>
+    ${payment.accounts.map((account) => payAccountHtml(account, { qr: "big", download: true })).join("")}
+    ${payment.whatsapp ? `<a class="btn btn-primary btn-lg send-proof" href="https://wa.me/${payment.whatsapp}?text=${message}" target="_blank" rel="noopener">${icon("chat")}Ya pagué: enviar el comprobante</a>` : ""}`;
+  // Solo se vuelve a dibujar si cambió (el seguimiento se consulta cada 10 s y no debe parpadear).
+  if (box.dataset.html !== html) {
+    box.dataset.html = html;
+    box.innerHTML = html;
+  }
+}
+
+bindCopy($("#payment"));
 await load();
 timer = setInterval(load, 10_000);

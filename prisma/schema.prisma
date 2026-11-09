@@ -62,6 +62,22 @@ enum PaymentMethod {
   NEQUI
   DATAFONO
   CREDITO
+  /// Pago inmediato a una llave Bre-B (desde cualquier banco o billetera).
+  BRE_B
+}
+
+/// Dónde recibe pagos la pesquera. BRE_B: llave (celular, documento, correo, @alias o código de comercio).
+/// NEQUI y DAVIPLATA: número de la billetera. BANCO: cuenta de ahorros o corriente.
+enum PaymentAccountKind {
+  BRE_B
+  NEQUI
+  DAVIPLATA
+  BANCO
+}
+
+enum BankAccountType {
+  AHORROS
+  CORRIENTE
 }
 
 /// ENTRADA: llega mercancía (barco, proveedor). SALIDA_PEDIDO: se despacha un pedido. DEVOLUCION: se anula un
@@ -89,6 +105,29 @@ model Setting {
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("settings")
+}
+
+/// Cuentas para recibir pagos (se muestran al cliente en la tienda, en el seguimiento y en el mostrador).
+/// Del QR solo se guarda el código que contiene (leído del pantallazo que da el banco); la imagen se dibuja de nuevo.
+model PaymentAccount {
+  id             String             @id @default(uuid(7)) @db.Uuid
+  kind           PaymentAccountKind
+  /// Llave Bre-B, número de Nequi/Daviplata o número de cuenta.
+  accountKey     String             @map("account_key")
+  holderName     String             @map("holder_name")
+  /// Cédula o NIT del titular (opcional; lo piden algunas transferencias).
+  holderDocument String?            @map("holder_document")
+  bankName       String?            @map("bank_name")
+  bankAccountType BankAccountType?  @map("bank_account_type")
+  /// Contenido del QR de cobro (p. ej. el código EMVCo de Bre-B).
+  qrPayload      String?            @map("qr_payload")
+  /// Se muestra a los clientes (tienda y seguimiento).
+  active         Boolean            @default(true)
+  sortOrder      Int                @default(0) @map("sort_order")
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("payment_accounts")
 }
 
 // ─────────────────────────────── Personal y sesiones ───────────────────────────────

@@ -1,4 +1,5 @@
 import { $, $$, api, ApiError, esc, fmt, icon, openDialog, showFieldErrors, themeControl } from "/js/core.js";
+import { bindCopy, payAccountHtml } from "/js/pay.js";
 
 $("#theme").innerHTML = themeControl("toggle");
 
@@ -127,7 +128,8 @@ function openCheckout() {
   $("#checkout-error").hidden = true;
   showFieldErrors(form, null);
   const { subtotal } = totals();
-  $("#checkout-summary").innerHTML = `<strong>${totals().count} productos · ${fmt.cop(subtotal)}</strong>`;
+  const count = totals().count;
+  $("#checkout-summary").innerHTML = `<strong>${count} ${count === 1 ? "producto" : "productos"} · ${fmt.cop(subtotal)}</strong>`;
   syncDelivery();
   openDialog($("#checkout"));
   form["customer.name"].focus();
@@ -135,6 +137,36 @@ function openCheckout() {
 
 function syncDelivery() {
   $("#address-field").hidden = $("#checkout-form").deliveryType.value !== "DOMICILIO";
+  syncPayment();
+}
+
+/** Formas de pago: «Llave Bre-B» aparece solo si la pesquera tiene una llave activa. */
+function renderPaymentOptions() {
+  const select = $("#checkout-form").paymentMethod;
+  const current = select.value;
+  const byMethod = state.store.payment?.byMethod ?? {};
+  const options = [
+    ["EFECTIVO", "Efectivo al recibir"],
+    ...(byMethod.BRE_B ? [["BRE_B", "Llave Bre-B (desde cualquier banco)"]] : []),
+    ["NEQUI", "Nequi"],
+    ["TRANSFERENCIA", "Transferencia bancaria"],
+    ["DATAFONO", "Datáfono al recibir"],
+  ];
+  select.innerHTML = options.map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
+  if (options.some(([value]) => value === current)) select.value = current;
+}
+
+/** Debajo de la forma de pago: a qué cuentas se paga (el QR y el valor exacto llegan en el seguimiento). */
+function syncPayment() {
+  const box = $("#pay-info");
+  const method = $("#checkout-form").paymentMethod.value;
+  const ids = state.store?.payment?.byMethod?.[method] ?? [];
+  const accounts = ids.map((id) => state.store.payment.accounts.find((account) => account.id === id)).filter(Boolean);
+  box.hidden = accounts.length === 0;
+  if (!accounts.length) return;
+  box.innerHTML = `
+    <p class="muted">Puedes pagar a ${accounts.length === 1 ? "esta cuenta" : "cualquiera de estas cuentas"}. Al hacer el pedido verás el QR y el valor exacto: lo que va por kilo se pesa al alistar.</p>
+    ${accounts.map((account) => payAccountHtml(account, { qr: false })).join("")}`;
 }
 
 async function placeOrder(event) {
@@ -180,6 +212,7 @@ async function load() {
   saveCart();
   renderCatalog();
   renderCart();
+  renderPaymentOptions();
 }
 
 document.addEventListener("click", (event) => {
@@ -203,6 +236,7 @@ $$("[data-close]").forEach((node) => {
 $("#cart-bar-open").addEventListener("click", () => openDialog($("#cart-dialog")));
 $("#checkout-form").addEventListener("change", syncDelivery);
 $("#checkout-form").addEventListener("submit", placeOrder);
+bindCopy($("#pay-info"));
 
 try {
   await load();

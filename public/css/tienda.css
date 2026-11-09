@@ -266,3 +266,31 @@
 body:has(.store-hero) {
   background: var(--page);
 }
+.pay-info-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pay-info-box p {
+  margin: 0;
+  font-size: 13px;
+}
+.pay-info-box .pay-key {
+  font-size: 18px;
+}
+.pay-section {
+  margin-top: 16px;
+  padding: 20px;
+}
+.pay-section h2 {
+  font-size: 22px;
+  font-weight: 750;
+  margin-bottom: 12px;
+}
+.send-proof {
+  width: 100%;
+  margin-top: 14px;
+}
+main.wrap > .card:first-child {
+  margin-top: 18px;
+}

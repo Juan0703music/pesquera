@@ -12,6 +12,7 @@ export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   NEQUI: "Nequi",
   DATAFONO: "Datáfono",
   CREDITO: "Crédito",
+  BRE_B: "Llave Bre-B",
 };
 
 export const todayIn = (timeZone = env.TIME_ZONE) => dateIn(new Date(), timeZone);

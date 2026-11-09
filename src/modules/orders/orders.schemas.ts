@@ -6,7 +6,7 @@ import { qtySchema } from "../../utils/quantity.js";
 const emptyToUndefined = (value: unknown) => (typeof value === "string" && value.trim() === "" ? undefined : value);
 const optionalText = (max: number) => z.preprocess(emptyToUndefined, z.string().trim().max(max).optional());
 
-export const PaymentMethodSchema = z.enum(["EFECTIVO", "TRANSFERENCIA", "NEQUI", "DATAFONO", "CREDITO"], { error: "Elige la forma de pago." });
+export const PaymentMethodSchema = z.enum(["EFECTIVO", "TRANSFERENCIA", "NEQUI", "BRE_B", "DATAFONO", "CREDITO"], { error: "Elige la forma de pago." });
 export const DeliveryTypeSchema = z.enum(["RECOGE", "DOMICILIO"], { error: "Elige si el cliente recoge o es domicilio." });
 
 export const ItemInputSchema = z.object({
@@ -56,7 +56,7 @@ export const StoreOrderSchema = z
   .object({
     deliveryType: DeliveryTypeSchema,
     customer: CustomerInputSchema.extend({ phone: phoneSchema }),
-    paymentMethod: z.enum(["EFECTIVO", "TRANSFERENCIA", "NEQUI", "DATAFONO"], { error: "Elige la forma de pago." }),
+    paymentMethod: z.enum(["EFECTIVO", "TRANSFERENCIA", "NEQUI", "BRE_B", "DATAFONO"], { error: "Elige la forma de pago." }),
     notes: optionalText(300),
     items: z.array(ItemInputSchema).min(1, "Agrega al menos un producto.").max(30),
     /** Campo trampa: las personas no lo ven; los robots lo llenan. */

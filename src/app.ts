@@ -17,6 +17,7 @@ import { catalogRoutes } from "./modules/catalog/catalog.routes.js";
 import { customersRoutes } from "./modules/customers/customers.routes.js";
 import { inventoryRoutes } from "./modules/inventory/inventory.routes.js";
 import { ordersRoutes } from "./modules/orders/orders.routes.js";
+import { paymentAccountsRoutes } from "./modules/payments/payment-accounts.routes.js";
 import { salesRoutes } from "./modules/sales/sales.routes.js";
 import { settingsRoutes } from "./modules/settings/settings.routes.js";
 import { storeRoutes } from "./modules/store/store.routes.js";
@@ -46,6 +47,7 @@ const APP_PAGES: Record<string, string> = {
   "/app/en-vivo": "pages/app/en-vivo.html",
   "/app/personal": "pages/app/personal.html",
   "/app/ajustes": "pages/app/ajustes.html",
+  "/app/cobros": "pages/app/cobros.html",
 };
 
 function apiRouter(): Router {
@@ -68,6 +70,7 @@ function apiRouter(): Router {
   api.use("/inventory", inventoryRoutes);
   api.use("/customers", customersRoutes);
   api.use("/orders", ordersRoutes);
+  api.use("/payment-accounts", paymentAccountsRoutes);
   api.use("/sales", salesRoutes);
   api.use("/analytics", analyticsRoutes);
   return api;
@@ -97,7 +100,8 @@ export function createApp() {
           "default-src": ["'self'"],
           "script-src": ["'self'"],
           "style-src": ["'self'"],
-          "img-src": ["'self'", "data:"],
+          // blob: solo para ver la imagen que se elige antes de subirla (archivo local del navegador).
+          "img-src": ["'self'", "data:", "blob:"],
           "font-src": ["'self'"],
           "connect-src": ["'self'"],
           "object-src": ["'none'"],

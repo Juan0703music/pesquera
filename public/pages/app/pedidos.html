@@ -101,6 +101,19 @@
       </form>
     </dialog>
 
+    <dialog id="pay-dialog" aria-labelledby="pay-title">
+      <div class="modal pay-modal">
+        <div class="modal-head"><h2 id="pay-title">Cobrar</h2><div class="spacer"></div><button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar"></button></div>
+        <div class="modal-body" id="pay-body"></div>
+        <div class="modal-foot">
+          <span class="muted">Cuando veas el pago en tu banco, regístralo con «Registrar pago».</span>
+          <div class="spacer"></div>
+          <button type="button" class="btn" id="pay-copy">Copiar datos de pago</button>
+          <a class="btn btn-primary" id="pay-whatsapp" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+        </div>
+      </div>
+    </dialog>
+
     <dialog id="detail-dialog" class="drawer-dialog" aria-labelledby="detail-title">
       <div class="drawer" id="detail"></div>
     </dialog>
