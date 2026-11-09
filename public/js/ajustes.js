@@ -1,9 +1,57 @@
-import { $, api, ApiError, showError, showFieldErrors, startShell, toast } from "/js/core.js";
+import { $, api, ApiError, icon, logoImg, showError, showFieldErrors, startShell, toast } from "/js/core.js";
 
 const local = (phone) => (phone ? phone.slice(2).replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3") : "");
 const money = (value) => Number(String(value).replace(/\D/g, "")) || 0;
 
 await startShell("ajustes", "admin.manage");
+
+/* ───────────── Logo ───────────── */
+let logo = null;
+function renderLogo() {
+  $("#logo-preview").innerHTML = logo ? logoImg(logo, "", "large") : `<span class="logo-empty">${icon("upload")}<span>Sin logo</span></span>`;
+  $("#logo-preview").classList.toggle("is-round", Boolean(logo?.round));
+  $("#logo-remove").hidden = !logo;
+  if (logo) $("#logo-round").checked = logo.round;
+}
+$("#logo-file").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  event.target.value = "";
+  if (!file) return;
+  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) return toast("Sube el logo en PNG, JPG o WebP.", { error: true });
+  if (file.size > 10 * 1024 * 1024) return toast("El logo pesa más de 10 MB.", { error: true });
+  try {
+    const res = await fetch(`/api/v1/settings/logo?round=${$("#logo-round").checked}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": file.type }, body: file });
+    const json = await res.json().catch(() => null);
+    if (!res.ok) throw new ApiError(res.status, json);
+    logo = json.data.logo;
+    renderLogo();
+    await startShell("ajustes", "admin.manage"); // el menú muestra el logo nuevo de una vez
+    toast("Logo guardado. Ya se ve en el panel, la entrada y la tienda.");
+  } catch (error) {
+    showError(error);
+  }
+});
+$("#logo-round").addEventListener("change", async (event) => {
+  if (!logo) return;
+  try {
+    logo = (await api("/settings/logo", { method: "PATCH", body: { round: event.target.checked } })).data.logo;
+    renderLogo();
+  } catch (error) {
+    showError(error);
+  }
+});
+$("#logo-remove").addEventListener("click", async () => {
+  if (!confirm("¿Quitar el logo? Se volverá a ver la ola de Marea.")) return;
+  try {
+    await api("/settings/logo", { method: "DELETE" });
+    logo = null;
+    renderLogo();
+    await startShell("ajustes", "admin.manage");
+    toast("Logo quitado.");
+  } catch (error) {
+    showError(error);
+  }
+});
 const form = $("#settings-form");
 try {
   const { data } = await api("/settings");
@@ -14,6 +62,8 @@ try {
   form.storeOpen.checked = data.storeOpen;
   form.minOrderTotal.value = data.minOrderTotal;
   $("#store-url").textContent = `${location.origin}/tienda`;
+  logo = data.logo;
+  renderLogo();
 } catch (error) {
   showError(error);
 }

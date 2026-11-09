@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ajustes</title>
     <script src="/js/theme.js"></script>
+    <link rel="icon" type="image/png" href="/media/logo/icon-32.png" />
+    <link rel="apple-touch-icon" href="/media/logo/apple-180.png" />
     <link rel="stylesheet" href="/css/app.css" />
     <script type="module" src="/js/ajustes.js"></script>
   </head>
@@ -13,6 +15,19 @@
       <aside class="sidebar"></aside>
       <main class="main">
         <div class="page-head"><div><h1>Ajustes</h1><div class="sub">Datos de la pesquera y de la tienda en línea.</div></div></div>
+        <section class="card logo-card" aria-labelledby="logo-title">
+          <div class="card-body logo-settings">
+            <div class="logo-preview" id="logo-preview"></div>
+            <div class="stack">
+              <div><h2 id="logo-title">Logo de la pesquera</h2><p class="muted">Se ve en el panel, en la entrada, en la tienda, en el seguimiento de los pedidos y en la pestaña del navegador. PNG, JPG o WebP; se guarda sin metadatos.</p></div>
+              <label class="switch"><input type="checkbox" id="logo-round" checked /><span class="track" aria-hidden="true"></span>Mi logo es redondo (mostrarlo como círculo)</label>
+              <div class="row">
+                <label class="btn btn-primary">Subir logo<input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp" class="sr-only" /></label>
+                <button type="button" class="btn btn-ghost btn-danger" id="logo-remove" hidden>Quitar logo</button>
+              </div>
+            </div>
+          </div>
+        </section>
         <form class="card" id="settings-form" novalidate>
           <div class="card-body stack">
             <div class="section-title">La pesquera</div>

@@ -1,4 +1,4 @@
-import { $, esc, fmt, icon, LABELS, themeControl } from "/js/core.js";
+import { $, esc, fmt, icon, LABELS, logoImg, themeControl } from "/js/core.js";
 import { bindCopy, payAccountHtml } from "/js/pay.js";
 
 $("#theme").innerHTML = themeControl("toggle");
@@ -19,6 +19,12 @@ async function load() {
     $("#order").innerHTML = '<a class="btn" href="/tienda">Ir a la tienda</a>';
     clearInterval(timer);
     return;
+  }
+  const brand = $("#track-brand");
+  if (order.business?.logo && brand.hidden) {
+    brand.innerHTML = logoImg(order.business.logo, "", "small", order.business.name);
+    brand.setAttribute("aria-label", `Volver a la tienda de ${order.business.name}`);
+    brand.hidden = false;
   }
   const steps = order.deliveryType === "RECOGE" ? STEPS.filter((status) => status !== "DESPACHADO") : STEPS;
   const current = steps.indexOf(order.status);

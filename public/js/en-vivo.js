@@ -1,4 +1,4 @@
-import { $, $$, api, connectLive, debounce, esc, fmt, icon, LABELS, startShell } from "/js/core.js";
+import { $, $$, api, connectLive, debounce, esc, fmt, icon, LABELS, logoImg, startShell } from "/js/core.js";
 import { Bars3D } from "/js/chart3d.js";
 
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -236,7 +236,9 @@ async function load() {
 }
 const reload = debounce(load, 400);
 
-await startShell("en-vivo", "analytics.view");
+const profile = await startShell("en-vivo", "analytics.view");
+// En el televisor (modo pantalla) el menú se oculta: el logo y el nombre quedan junto al título.
+$("#wall-brand").innerHTML = `${profile.logo ? logoImg(profile.logo, "", "small", profile.businessName) : ""}<strong>${esc(profile.businessName)}</strong>`;
 setupCharts();
 await load();
 

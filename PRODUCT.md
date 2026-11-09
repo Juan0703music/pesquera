@@ -9,6 +9,7 @@ web
 ## Users
 
 - **Equipo de una sola pesquera** (Colombia, costa Caribe): administrador o dueño, ventas (mostrador, llamadas, WhatsApp), despacho (alistar y pesar) y bodega (entradas de mercancía, conteos, mermas). Usan el panel en el mostrador y la bodega con luz fuerte (a veces con las manos mojadas o con guantes), en la oficina del dueño, en un televisor en la pared con el tablero en vivo y en los celulares del personal.
+- El negocio vende **pescado y pollo criollo** (así lo dice su logo); el catálogo de demostración solo tiene pescados y mariscos.
 - **Clientes de la tienda en línea**: familias y hogares (compran 1 a 3 kg, miran fotos y precios), restaurantes y negocios (5 a 20 kg, casi siempre lo mismo), turistas o clientes de temporada (no conocen los productos) y revendedores (otros pescaderos o tiendas). Compran desde el celular.
 
 ## Product Purpose
@@ -36,6 +37,7 @@ Hecho para el pescado: se vende por kilo con el peso real al alistar (el total d
 ## Brand Commitments
 
 - «Marea» es el nombre provisional del software; el nombre de la pesquera lo pone el dueño en Ajustes (en uso: «LU&MAR»).
+- Logo del negocio (subido por el dueño el 2026-11-09): medallón redondo «Agroindustria LUMAR — Pescado y pollo criollo» (gallo, pez y olas; verde, azul, rojo y amarillo). Se guarda en la base de datos desde Ajustes, **no en el repositorio** (que es público). Se muestra como medallón con aro blanco: menú del panel, entrada, tienda, seguimiento, modo pantalla y ícono de la pestaña. Con logo, el nombre de la pesquera manda y «Marea» queda como firma discreta.
 - Identidad marina confirmada por el dueño (2026-11-08): menú «mar profundo», acción aguamarina, tipografía Bricolage Grotesque para títulos y cifras, tema claro «hielo» y oscuro «abismo» (por defecto, el del equipo de cada persona).
 - Todo el texto en español de Colombia.
 

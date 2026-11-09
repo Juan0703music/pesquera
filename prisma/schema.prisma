@@ -102,9 +102,25 @@ model Setting {
   storeOpen     Boolean  @default(true) @map("store_open")
   deliveryFee   Int      @default(0) @map("delivery_fee")
   minOrderTotal Int      @default(0) @map("min_order_total")
+  /// Hay logo cargado (ver BusinessLogo).
+  hasLogo       Boolean  @default(false) @map("has_logo")
+  /// Sube con cada logo nuevo y nunca baja: la dirección de la imagen cambia y el navegador no muestra el viejo.
+  logoVersion   Int      @default(0) @map("logo_version")
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("settings")
+}
+
+/// Logo de la pesquera (una sola fila). Se guarda normalizado (PNG cuadrado de hasta 1024 px, sin metadatos);
+/// los tamaños (panel, tienda, ícono de la pestaña) se generan al pedirlos. No va en el repositorio: es del negocio.
+model BusinessLogo {
+  id        Int      @id @default(1)
+  image     Bytes
+  /// Logo redondo: se muestra y se recorta como círculo.
+  round     Boolean  @default(true)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("business_logo")
 }
 
 /// Cuentas para recibir pagos (se muestran al cliente en la tienda, en el seguimiento y en el mostrador).

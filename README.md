@@ -14,7 +14,7 @@ Recibe pedidos, los despacha con el **peso real**, lleva el **inventario por kil
 | **Ventas del día** | Ventas, ticket promedio, kilos, cobrado vs. por cobrar, ganancia estimada, cierre de caja por forma de pago (imprimible), más vendidos y origen. Cualquier día. | Admin y Ventas |
 | **En vivo 3D** | Cifras del día contra ayer a la misma hora, pedidos ahora, actividad, ventas por hora × categoría en 3D, bodega en 3D (valor y nivel de existencia) y los últimos 14 días en 3D. Cada gráfica tiene tooltip y «Ver como tabla». | Admin |
 | **Cuentas de cobro** | Llaves Bre-B (celular, documento o código de comercio, correo, @alias), Nequi, Daviplata y cuentas bancarias. Se sube el pantallazo del QR que da el banco: Marea lee el código y lo muestra nítido (la imagen no se guarda). | Admin configura; Ventas las ve para cobrar |
-| **Personal / Ajustes** | Usuarios por rol; datos de la pesquera, domicilio, pedido mínimo y tienda abierta/cerrada. | Admin |
+| **Personal / Ajustes** | Usuarios por rol; **logo de la pesquera** (se guarda en la base, no en el repositorio, y se usa en el panel, la entrada, la tienda, el seguimiento y el ícono de la pestaña); datos de la pesquera, dirección de recogida, pedido mínimo y tienda abierta/cerrada. | Admin |
 | **Tienda** (`/tienda`) | «La pizarra del día»: lo que llegó hoy (o lo más pedido) con fotos y la lista de precios del día; buscador y categorías; ficha con foto, cortes y cantidades rápidas (½ a 10 kg); «Pedir lo mismo» de la última vez; el cliente recoge en la pesquera y sigue su pedido en vivo. | Público |
 
 ### Reglas del negocio (las hace cumplir el servidor y la base de datos)

@@ -11,7 +11,7 @@ import { committedByProduct } from "../inventory/stock.js";
 import { StoreOrderSchema, type StoreOrderInput } from "../orders/orders.schemas.js";
 import { ordersService } from "../orders/orders.service.js";
 import { paymentAccountsService } from "../payments/payment-accounts.service.js";
-import { getSettings } from "../settings/settings.routes.js";
+import { getBrand, getSettings } from "../settings/settings.routes.js";
 
 const IdParams = z.object({ id: z.uuid("Identificador inválido.") });
 
@@ -33,7 +33,7 @@ async function popularity(since: Date) {
 
 storeRoutes.get("/", async (_req, res) => {
   const today = dayRange(todayIn());
-  const [settings, categories, committed, payment, arrivals, popular] = await Promise.all([
+  const [settings, categories, committed, payment, arrivals, popular, brand] = await Promise.all([
     getSettings(),
     prisma.category.findMany({
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -50,6 +50,7 @@ storeRoutes.get("/", async (_req, res) => {
     // Lo que llegó hoy (entradas de mercancía desde la medianoche, hora de Colombia).
     prisma.inventoryMovement.groupBy({ by: ["productId"], where: { type: "ENTRADA", createdAt: { gte: today.start, lt: today.end } }, _max: { createdAt: true } }),
     popularity(new Date(today.start.getTime() - 14 * 86_400_000)),
+    getBrand(),
   ]);
   const arrivedAt = new Map(arrivals.map((row) => [row.productId, row._max.createdAt]));
   res.set("Cache-Control", "no-store").json({
@@ -58,7 +59,7 @@ storeRoutes.get("/", async (_req, res) => {
       payment,
       business: {
         name: settings.businessName, phone: settings.phone, whatsapp: settings.whatsapp, address: settings.address,
-        open: settings.storeOpen, minOrderTotal: settings.minOrderTotal, timeZone: env.TIME_ZONE,
+        open: settings.storeOpen, minOrderTotal: settings.minOrderTotal, timeZone: env.TIME_ZONE, logo: brand.logo,
       },
       today: todayIn(),
       categories: categories

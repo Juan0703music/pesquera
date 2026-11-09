@@ -1,4 +1,4 @@
-import { $, $$, api, ApiError, esc, fmt, icon, openDialog, showFieldErrors, themeControl, toast } from "/js/core.js";
+import { $, $$, api, ApiError, esc, fmt, icon, logoImg, openDialog, showFieldErrors, themeControl, toast } from "/js/core.js";
 import { bindCopy, payAccountHtml } from "/js/pay.js";
 
 // Tienda en línea: «La pizarra del día». Lo fresco y los precios primero; el cliente recoge en la pesquera.
@@ -61,6 +61,9 @@ function renderHead() {
   const { business } = state.store;
   document.title = `${business.name} · Pide en línea`;
   $("#store-name").textContent = business.name;
+  const logo = $("#store-logo");
+  logo.hidden = !business.logo;
+  if (business.logo && !logo.firstChild) logo.innerHTML = logoImg(business.logo, "", "large", business.name);
   $("#store-meta").innerHTML = [
     business.open
       ? `<span class="badge badge-good">${icon("checkCircle")}Recibiendo pedidos</span>`

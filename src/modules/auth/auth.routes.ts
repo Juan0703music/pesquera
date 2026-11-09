@@ -9,6 +9,7 @@ import { validate } from "../../middlewares/validate.js";
 import { live } from "../../services/live.service.js";
 import { conflict } from "../../utils/errors.js";
 import { hashPassword } from "../../utils/password.js";
+import { getBrand } from "../settings/settings.routes.js";
 import { authService } from "./auth.service.js";
 import { can, permissionsOf, ROLE_LABELS } from "./permissions.js";
 import { clearSessionCookie, readSessionToken, setSessionCookie } from "./session-cookie.js";
@@ -28,14 +29,15 @@ const RegisterSchema = z.object({
 
 /** Lo que el panel necesita saber de la persona y de la pesquera. */
 async function profile(userId: string) {
-  const [user, settings] = await Promise.all([
+  const [user, brand] = await Promise.all([
     prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, name: true, email: true, role: true } }),
-    prisma.setting.findUnique({ where: { id: 1 }, select: { businessName: true } }),
+    getBrand(),
   ]);
   return {
     user: { ...user, roleLabel: ROLE_LABELS[user.role] },
     permissions: permissionsOf(user.role),
-    businessName: settings?.businessName ?? "Pesquera",
+    businessName: brand.name,
+    logo: brand.logo,
     // Solicitudes de acceso por aprobar (solo para quien puede aprobarlas).
     pendingApprovals: can(user.role, "admin.manage") ? await prisma.user.count({ where: { pendingApproval: true } }) : 0,
   };
@@ -49,7 +51,7 @@ export const authRoutes = Router();
  * - demo: en desarrollo, los usuarios de la demostración para entrar con un clic.
  */
 authRoutes.get("/status", async (_req, res) => {
-  const [users, settings] = await Promise.all([prisma.user.count(), prisma.setting.findUnique({ where: { id: 1 }, select: { businessName: true } })]);
+  const [users, settings, brand] = await Promise.all([prisma.user.count(), prisma.setting.findUnique({ where: { id: 1 }, select: { businessName: true } }), getBrand()]);
   let demo = null;
   if (env.NODE_ENV === "development") {
     const existing = await prisma.user.findMany({ where: { email: { in: DEMO_USERS.map((user) => user.email) }, active: true }, select: { email: true, role: true, name: true } });
@@ -58,7 +60,7 @@ authRoutes.get("/status", async (_req, res) => {
     existing.sort((x, y) => order.indexOf(x.email) - order.indexOf(y.email));
     if (existing.length) demo = { password: DEMO_PASSWORD, users: existing.map((user) => ({ ...user, roleLabel: ROLE_LABELS[user.role] })) };
   }
-  res.set("Cache-Control", "no-store").json({ data: { needsSetup: users === 0, businessName: settings?.businessName ?? null, demo } });
+  res.set("Cache-Control", "no-store").json({ data: { needsSetup: users === 0, businessName: settings?.businessName ?? null, logo: brand.logo, demo } });
 });
 
 authRoutes.post("/login", loginLimiter, validate({ body: LoginSchema }), async (req, res) => {

@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>En vivo</title>
     <script src="/js/theme.js"></script>
+    <link rel="icon" type="image/png" href="/media/logo/icon-32.png" />
+    <link rel="apple-touch-icon" href="/media/logo/apple-180.png" />
     <link rel="stylesheet" href="/css/app.css" />
     <script src="/socket.io/socket.io.min.js" defer></script>
     <script type="module" src="/js/en-vivo.js"></script>
@@ -14,6 +16,7 @@
       <aside class="sidebar"></aside>
       <main class="main">
         <div class="page-head">
+          <span class="wall-brand" id="wall-brand"></span>
           <div>
             <h1>En vivo</h1>
             <div class="sub" id="updated">Cargando…</div>

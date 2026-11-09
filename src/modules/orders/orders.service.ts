@@ -11,7 +11,7 @@ import { formatQty, lineTotal, toMilli } from "../../utils/quantity.js";
 import { generateToken, hashToken } from "../auth/auth.service.js";
 import { applyStockChange, committedByProduct, OPEN_STATUSES } from "../inventory/stock.js";
 import { paymentAccountsService } from "../payments/payment-accounts.service.js";
-import { getSettings } from "../settings/settings.routes.js";
+import { getBrand, getSettings } from "../settings/settings.routes.js";
 import type { CreateOrderInput, ItemInput, StoreOrderInput } from "./orders.schemas.js";
 
 /** Orden del flujo: solo se avanza, nunca se devuelve. */
@@ -341,6 +341,8 @@ export const ordersService = {
     const accounts = open ? await paymentAccountsService.forMethod(order.paymentMethod) : [];
     const exact = order.status === "DESPACHADO" || order.status === "ENTREGADO" || order.items.every((item) => item.unit !== "KG" || item.actualQtyMilli !== null);
     return {
+      // Nombre y logo de la pesquera para el encabezado del seguimiento.
+      business: await getBrand(),
       // El WhatsApp de la pesquera, para enviar el comprobante del pago.
       payment: accounts.length ? { accounts, amountDue: order.total, exact, whatsapp: (await getSettings()).whatsapp } : null,
       id: order.id,

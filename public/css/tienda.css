@@ -1021,3 +1021,32 @@ main.wrap > .card:first-child {
 .chips {
   min-width: 0;
 }
+
+/* ───────────── Logo en la tienda y el seguimiento ───────────── */
+.shop-head-inner {
+  align-items: center;
+}
+.shop-logo {
+  flex: none;
+  width: clamp(72px, 9vw, 116px);
+}
+.track-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.track-brand {
+  flex: none;
+  width: 58px;
+}
+@media (max-width: 560px) {
+  .shop-head-inner {
+    align-items: flex-start;
+  }
+  .shop-logo {
+    width: 64px;
+  }
+  .track-brand {
+    width: 46px;
+  }
+}

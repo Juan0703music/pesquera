@@ -1,4 +1,4 @@
-import { $, $$, api, ApiError, esc, icon, showFieldErrors, themeControl } from "/js/core.js";
+import { $, $$, api, ApiError, esc, icon, logoImg, showFieldErrors, themeControl } from "/js/core.js";
 
 const ROLE_ICON = { ADMIN: "settings", VENTAS: "cash", DESPACHO: "truck", BODEGA: "box" };
 const back = () => {
@@ -87,6 +87,11 @@ $("#register").addEventListener("submit", async (event) => {
 try {
   const { data } = await api("/auth/status");
   $("#business").textContent = data.businessName ?? "";
+  if (data.logo) {
+    // El logo de la pesquera manda en su propia entrada; Marea queda como firma discreta.
+    $("#auth-brand").innerHTML = `${logoImg(data.logo, "auth-logo", "large", data.businessName)}<span class="auth-brand-text"><strong>${esc(data.businessName ?? "")}</strong><span>Panel de la pesquera · Marea</span></span>`;
+    $("#auth-brand").classList.add("has-logo");
+  }
   if (data.needsSetup) {
     // Sistema nuevo: solo se puede crear la cuenta del administrador.
     $("#setup-note").hidden = false;

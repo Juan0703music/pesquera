@@ -159,6 +159,14 @@ function sidebarWaves() {
   return `<svg class="sidebar-waves" viewBox="0 0 260 180" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">${paths.join("")}</g></svg>`;
 }
 
+/**
+ * Logo de la pesquera como imagen (medallón si es redondo). `logo` viene de la API: { large, small, round }.
+ * Si no hay logo, quien llama muestra la ola de Marea.
+ */
+export function logoImg(logo, cls = "", size = "small", name = "") {
+  return `<img class="${cls} logo-img${logo.round ? " is-round" : ""}" src="${logo[size]}" alt="${name ? `Logo de ${esc(name)}` : "Logo"}" decoding="async" />`;
+}
+
 /* ───────────── API ───────────── */
 export class ApiError extends Error {
   constructor(status, body) {
@@ -301,9 +309,9 @@ export async function startShell(pageId, permission) {
   const initials = data.user.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   const sidebar = $(".sidebar");
   sidebar.innerHTML = `${sidebarWaves()}
-    <a class="brand" href="/app/pedidos" aria-label="Marea — inicio">
-      <span class="brand-mark">${icon("wave")}</span>
-      <span><span class="brand-name">Marea</span><br><span class="brand-business">${esc(data.businessName)}</span></span>
+    <a class="brand${data.logo ? " has-logo" : ""}" href="/app/pedidos" aria-label="${esc(data.businessName)} — inicio del panel">
+      ${data.logo ? logoImg(data.logo, "brand-logo", "small", data.businessName) : `<span class="brand-mark">${icon("wave")}</span>`}
+      <span class="brand-text"><span class="brand-name">${esc(data.businessName)}</span><span class="brand-business">Panel · Marea</span></span>
     </a>
     <nav class="nav" aria-label="Secciones">
       ${NAV.filter((item) => item.sep || !item.permission || can(item.permission))

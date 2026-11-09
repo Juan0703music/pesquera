@@ -2632,3 +2632,200 @@ details.menu summary::-webkit-details-marker {
     grid-template-columns: 1fr;
   }
 }
+
+/* ───────────── Logo de la pesquera ───────────── */
+/* Medallón: aro blanco fino y sombra con desplazamiento (lo separa de los fondos oscuros). */
+.logo-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: #ffffff;
+}
+.logo-img.is-round {
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #ffffff, 0 10px 22px -10px rgba(2, 10, 16, 0.65);
+}
+.logo-img:not(.is-round) {
+  border-radius: 14px;
+  padding: 6%;
+  box-shadow: 0 10px 22px -10px rgba(2, 10, 16, 0.65);
+}
+
+/* Menú del panel: el logo y el nombre de la pesquera mandan; Marea queda como firma. */
+.brand.has-logo {
+  gap: 12px;
+}
+.brand-logo {
+  flex: none;
+  width: 56px;
+}
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.brand .brand-name {
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.brand.has-logo .brand-name {
+  font-size: 18px;
+}
+
+/* Entrada: el logo grande en el panel de olas. */
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.auth-brand.has-logo {
+  gap: 20px;
+}
+.auth-logo {
+  flex: none;
+  width: clamp(104px, 11vw, 150px);
+}
+.auth-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.auth-brand .auth-brand-text strong {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 2.4vw, 30px);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+.auth-brand-text span {
+  color: #a9cdd6;
+  font-size: 14px;
+  font-weight: 550;
+}
+
+/* En vivo en el televisor: logo y nombre junto al título (el menú no se ve). */
+.wall-brand {
+  display: none;
+  align-items: center;
+  gap: 14px;
+  padding-right: 18px;
+  margin-right: 4px;
+  border-right: 1px solid var(--border);
+}
+.wall-brand img {
+  width: 72px;
+}
+.wall-brand strong {
+  font-family: var(--font-display);
+  font-size: 26px;
+  letter-spacing: -0.02em;
+}
+body.wall .wall-brand {
+  display: flex;
+}
+
+/* Ajustes: vista previa sobre fondo oscuro (como se verá en el menú y en la tienda). */
+.logo-card {
+  margin-bottom: 16px;
+}
+.logo-settings {
+  display: grid;
+  grid-template-columns: 172px minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+}
+.logo-settings h2 {
+  font-size: 19px;
+  margin-bottom: 4px;
+}
+.logo-settings p {
+  margin: 0;
+}
+.logo-preview {
+  display: grid;
+  place-items: center;
+  width: 172px;
+  height: 172px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--abyss-1), var(--abyss-2));
+}
+.logo-preview .logo-img {
+  width: 132px;
+}
+.logo-empty {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  color: var(--abyss-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.logo-empty .icon {
+  width: 28px;
+  height: 28px;
+}
+@media (max-width: 900px) {
+  .brand-logo {
+    width: 40px;
+  }
+  .logo-img.is-round {
+    box-shadow: 0 0 0 2px #ffffff, 0 6px 14px -8px rgba(2, 10, 16, 0.65);
+  }
+  .auth-logo {
+    width: 88px;
+  }
+}
+@media (max-width: 560px) {
+  .logo-settings {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Entrada en el celular: nada puede ensanchar la página (los botones de demostración parten su texto). */
+.auth {
+  grid-template-columns: minmax(0, 1.1fr) minmax(400px, 0.9fr);
+}
+.auth > * {
+  min-width: 0;
+}
+.demo-user {
+  white-space: normal;
+}
+@media (max-width: 900px) {
+  .auth {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Ninguna columna se ensancha por una tabla o una fila larga: las tablas se desplazan por dentro. */
+.dash > *,
+.side-stack > * {
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .dash {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.accounts-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+}
+.auth-box {
+  min-width: 0;
+}
+.demo-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.demo-user strong {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 400px) {
+  .demo-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.auth-art {
+  gap: 22px;
+}
