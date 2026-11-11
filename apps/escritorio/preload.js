@@ -10,8 +10,7 @@ contextBridge.exposeInMainWorld("mareaEscritorio", {
   /** Pedidos abiertos (se ven al pasar el mouse por el ícono de la bandeja). */
   setOpenCount: (count) => ipcRenderer.send("marea:pedidos-abiertos", Number(count) || 0),
   info: () => ipcRenderer.invoke("marea:info"),
-  // Solo funcionan desde las pantallas propias del programa (configurar y sin conexión).
-  probarServidor: (url) => ipcRenderer.invoke("marea:probar", String(url)),
-  guardarServidor: (url) => ipcRenderer.invoke("marea:guardar", String(url)),
+  // Solo funcionan desde la pantalla propia del programa («Sin conexión»).
+  comprobarConexion: () => ipcRenderer.invoke("marea:comprobar"),
   reintentar: () => ipcRenderer.send("marea:reintentar"),
 });

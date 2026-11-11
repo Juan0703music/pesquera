@@ -1,7 +1,8 @@
 // Marea para Windows: el panel de la pesquera en su propia ventana.
 //
-// - Se conecta al servidor de Marea (Railway). Los datos viven allá: este programa no guarda nada del
-//   negocio, solo la sesión (como un navegador) y sus preferencias.
+// - Se conecta a la nube de Marea (Railway + Supabase). La dirección viene dentro del instalador
+//   (servidor.json, la escribe GitHub al construirlo): quien lo instala solo abre Marea y entra con su
+//   cuenta. Los datos viven en la nube: este programa no guarda nada del negocio, solo la sesión.
 // - Al cerrar la ventana queda en la bandeja del sistema, conectado en vivo: suena y muestra un aviso de
 //   Windows con cada pedido nuevo. Arranca solo con Windows (se puede apagar en el menú de la bandeja).
 // - Sin internet muestra «Sin conexión» y vuelve sola al panel cuando el servidor responde.
@@ -52,7 +53,7 @@ function normalizeServer(value) {
   }
 }
 
-/** Dirección con que se construyó el instalador (servidor.json), si la tiene. */
+/** Dirección de la nube con que se construyó el instalador (servidor.json). */
 function bakedServer() {
   try {
     return JSON.parse(fs.readFileSync(path.join(__dirname, "servidor.json"), "utf8")).url ?? "";
@@ -61,7 +62,8 @@ function bakedServer() {
   }
 }
 
-const serverUrl = () => normalizeServer(process.env.MAREA_SERVIDOR || readConfig().server || bakedServer());
+// MAREA_SERVIDOR solo sirve para probar el programa en desarrollo; el instalador usa servidor.json.
+const serverUrl = () => normalizeServer(process.env.MAREA_SERVIDOR || bakedServer());
 const sameOrigin = (url) => {
   try {
     return new URL(url).origin === serverUrl();
@@ -70,7 +72,7 @@ const sameOrigin = (url) => {
   }
 };
 const PAGES_URL = `${pathToFileURL(PAGES).href}/`;
-/** Pantallas propias del programa (configurar, sin conexión), nunca otros archivos del equipo. */
+/** Pantallas propias del programa («Sin conexión»), nunca otros archivos del equipo. */
 const isOwnPage = (url) => {
   try {
     return new URL(url).href.toLowerCase().startsWith(PAGES_URL.toLowerCase());
@@ -87,7 +89,8 @@ let openCount = 0;
 
 function loadPanel() {
   const server = serverUrl();
-  if (!server) return win.loadFile(path.join(PAGES, "configurar.html"));
+  // Un instalador sin dirección (solo los de ensayo) muestra el aviso en vez de preguntarla.
+  if (!server) return showOffline("");
   return win.loadURL(`${server}/app/pedidos`);
 }
 
@@ -206,13 +209,6 @@ function updateTray() {
       { label: "Abrir Marea", click: showWindow },
       { type: "separator" },
       { label: "Iniciar con Windows", type: "checkbox", checked: autoStartEnabled(), click: (item) => setAutoStart(item.checked) },
-      {
-        label: "Cambiar servidor…",
-        click: () => {
-          win.loadFile(path.join(PAGES, "configurar.html"));
-          showWindow();
-        },
-      },
       { type: "separator" },
       {
         label: "Salir de Marea",
@@ -243,30 +239,19 @@ ipcMain.on("marea:pedidos-abiertos", (_event, count) => {
   openCount = Math.max(0, Math.floor(Number(count) || 0));
   updateTray();
 });
-ipcMain.handle("marea:info", () => ({ version: app.getVersion(), servidor: serverUrl() || bakedServer() }));
+ipcMain.handle("marea:info", () => ({ version: app.getVersion(), servidor: serverUrl() }));
 
-/** Comprueba que la dirección sea un servidor de Marea que responde. */
-ipcMain.handle("marea:probar", async (event, value) => {
-  if (!fromOwnPage(event)) return { ok: false, error: "No permitido." };
-  const server = normalizeServer(value);
-  if (!server) return { ok: false, error: "Escribe la dirección completa, empezando por https://" };
+/** ¿Ya responde la nube? (la pantalla «Sin conexión» lo pregunta cada 5 segundos). */
+ipcMain.handle("marea:comprobar", async (event) => {
+  const server = serverUrl();
+  if (!fromOwnPage(event) || !server) return { ok: false };
   try {
     const res = await net.fetch(`${server}/api/v1/health`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
     const body = await res.json().catch(() => null);
-    if (res.ok && body?.data?.status === "ok") return { ok: true, server };
-    return { ok: false, error: `El servidor respondió, pero no parece Marea (código ${res.status}).` };
+    return { ok: res.ok && body?.data?.status === "ok" };
   } catch {
-    return { ok: false, error: "No hubo respuesta. Revisa la dirección y la conexión a internet." };
+    return { ok: false };
   }
-});
-
-ipcMain.handle("marea:guardar", async (event, value) => {
-  if (!fromOwnPage(event)) return { ok: false };
-  const server = normalizeServer(value);
-  if (!server) return { ok: false };
-  writeConfig({ server });
-  loadPanel();
-  return { ok: true };
 });
 
 ipcMain.on("marea:reintentar", (event) => {

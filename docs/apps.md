@@ -54,17 +54,19 @@ También puedes pedírmelo a mí: «publica las apps, versión 1.0.1».
 2. Si aparece **«Windows protegió su PC»**, toca **Más información → Ejecutar de todas formas**. Pasa porque el
    instalador no tiene una firma comercial (cuesta cientos de dólares al año); el programa es el de este repositorio.
 3. Se instala solo (sin pedir permisos de administrador), crea el acceso en el escritorio y abre Marea.
-4. Entra con tu cuenta. La sesión queda guardada.
+4. Cada persona entra con su correo y contraseña y ve lo de su rol (Administrador, Ventas, Despacho o Bodega).
+   La sesión queda guardada.
+
+No se configura nada más: la dirección de la nube viene dentro del instalador. GitHub la pone al construirlo.
 
 Cómo se comporta:
 
 - **Cerrar la ventana (X) no cierra Marea:** queda en la **bandeja del sistema**, junto al reloj, avisando de
   los pedidos. Para cerrarla del todo: clic derecho en el ícono → **Salir de Marea**.
-- En el menú del ícono:
-  - **Iniciar con Windows:** viene activado.
-  - **Cambiar servidor…**
+- En el menú del ícono: **Iniciar con Windows** (viene activado).
 - Al pasar el mouse por el ícono se ve cuántos pedidos hay abiertos.
-- **Sin internet:** muestra «Sin conexión» y vuelve sola al panel cuando el servidor responde.
+- **Sin internet:** muestra «Sin conexión» y vuelve sola al panel cuando la conexión regresa. Los datos siguen a
+  salvo en la nube.
 - **Atajos:**
   - `F5` recarga.
   - `Ctrl` + rueda del mouse amplía o reduce.
@@ -93,7 +95,8 @@ Requisitos y detalles:
 Casi nunca. Las pantallas vienen del servidor: cada mejora que se publica en Railway aparece sola en el PC y en
 el celular. Solo hace falta instalar una versión nueva de las apps en estos casos:
 
-- Cambió la dirección del servidor (por ejemplo, un dominio propio).
+- Cambió la dirección de la nube (por ejemplo, un dominio propio). Va dentro de cada instalador, así que hay que
+  publicar uno nuevo e instalarlo encima.
 - Cambió el logo y quieres el ícono nuevo.
 - Hubo una mejora en el programa mismo (bandeja, ventana, ícono).
 
@@ -133,7 +136,8 @@ de direcciones y recibe los avisos.
 Si se cambian, cada equipo debe volver a activar los avisos.
 
 **Ensayo de la construcción.** En «Run workflow» marca **Ensayo**. Construye las dos apps sin servidor y sin
-publicar, para comprobar que todo compila. Las apps de un ensayo no sirven para instalar.
+publicar, para comprobar que todo compila. Las apps de un ensayo no sirven para instalar: la de Windows solo
+muestra «Instalador de prueba».
 
 | Problema | Qué hacer |
 |---|---|

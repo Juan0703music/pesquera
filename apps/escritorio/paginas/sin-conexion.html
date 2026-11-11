@@ -12,13 +12,12 @@
     <main>
       <div class="marca">
         <img src="../recursos/icono.png" alt="" />
-        <div><strong>Marea</strong><span id="servidor"></span></div>
+        <div><strong>Marea</strong><span>Pedidos, inventario y ventas en vivo</span></div>
       </div>
-      <h1><span class="punto" aria-hidden="true"></span>Sin conexión</h1>
-      <p>No hay internet en este equipo o el servidor no responde. Marea vuelve a intentarlo sola cada 5 segundos y abre el panel apenas se pueda.</p>
-      <div class="acciones">
+      <h1><span class="punto" aria-hidden="true"></span><span id="titulo">Sin conexión</span></h1>
+      <p id="mensaje">No hay internet en este equipo o la nube de Marea no responde. Marea vuelve a intentarlo sola cada 5 segundos y abre el panel apenas se pueda. Tus datos están a salvo en la nube.</p>
+      <div class="acciones" id="acciones">
         <button class="principal" type="button" id="reintentar">Reintentar ahora</button>
-        <a class="boton" href="configurar.html">Cambiar servidor</a>
       </div>
       <p class="estado" id="estado" role="status" aria-live="polite"></p>
     </main>
