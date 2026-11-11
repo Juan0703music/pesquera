@@ -34,6 +34,8 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 const TABLES = [
   "users",
   "sessions",
+  "push_subscriptions",
+  "web_push_keys",
   "settings",
   "business_logo",
   "payment_accounts",

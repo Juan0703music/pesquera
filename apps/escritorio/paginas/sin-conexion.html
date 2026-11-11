@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sin conexión · Marea</title>
+    <link rel="stylesheet" href="estilos.css" />
+    <script src="sin-conexion.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <div class="marca">
+        <img src="../recursos/icono.png" alt="" />
+        <div><strong>Marea</strong><span id="servidor"></span></div>
+      </div>
+      <h1><span class="punto" aria-hidden="true"></span>Sin conexión</h1>
+      <p>No hay internet en este equipo o el servidor no responde. Marea vuelve a intentarlo sola cada 5 segundos y abre el panel apenas se pueda.</p>
+      <div class="acciones">
+        <button class="principal" type="button" id="reintentar">Reintentar ahora</button>
+        <a class="boton" href="configurar.html">Cambiar servidor</a>
+      </div>
+      <p class="estado" id="estado" role="status" aria-live="polite"></p>
+    </main>
+  </body>
+</html>

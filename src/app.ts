@@ -20,6 +20,8 @@ import { customersRoutes } from "./modules/customers/customers.routes.js";
 import { inventoryRoutes } from "./modules/inventory/inventory.routes.js";
 import { ordersRoutes } from "./modules/orders/orders.routes.js";
 import { paymentAccountsRoutes } from "./modules/payments/payment-accounts.routes.js";
+import { pushRoutes } from "./modules/push/push.routes.js";
+import { pwaRoutes } from "./modules/pwa/pwa.routes.js";
 import { salesRoutes } from "./modules/sales/sales.routes.js";
 import { settingsRoutes } from "./modules/settings/settings.routes.js";
 import { storeRoutes } from "./modules/store/store.routes.js";
@@ -75,6 +77,7 @@ function apiRouter(): Router {
   api.use("/payment-accounts", paymentAccountsRoutes);
   api.use("/sales", salesRoutes);
   api.use("/analytics", analyticsRoutes);
+  api.use("/push", pushRoutes);
   return api;
 }
 
@@ -116,6 +119,9 @@ export function createApp() {
   );
 
   app.use("/api/v1", apiLimiter, originGuard, express.json({ limit: "100kb" }), apiRouter(), apiNotFound);
+
+  // Instalar como app (manifiesto, service worker, íconos) y verificación de la app de Android.
+  app.use(pwaRoutes);
 
   // Fotos de los productos (públicas: las ve la tienda).
   app.use("/media", mediaRoutes, logoMediaRoutes);

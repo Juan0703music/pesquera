@@ -44,6 +44,8 @@ const PATHS = {
   copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
   download: '<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
   upload: '<path d="M12 21V9M7 14l5-5 5 5M4 3h16"/>',
+  bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
+  bellOff: '<path d="M8.7 3A6 6 0 0 1 18 8c0 2.1.3 3.8.6 5"/><path d="M17 17H3s3-2 3-9c0-.6.1-1.2.3-1.7"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/><path d="m2 2 20 20"/>',
 };
 
 export function icon(name, cls = "") {
@@ -326,12 +328,16 @@ export async function startShell(pageId, permission) {
     <div class="sidebar-foot">
       <span class="avatar" aria-hidden="true">${esc(initials)}</span>
       <span class="who"><strong>${esc(data.user.name)}</strong><span>${esc(data.user.roleLabel)}</span></span>
+      <button class="btn btn-ghost btn-icon" id="push-toggle" type="button" hidden>${icon("bell")}</button>
       <button class="btn btn-ghost btn-icon" id="logout" title="Cerrar sesión" aria-label="Cerrar sesión">${icon("logout")}</button>
     </div>`;
   $("#logout").addEventListener("click", async () => {
+    // Este equipo deja de recibir los avisos de esta persona.
+    await stopPush({ remember: false }).catch(() => {});
     await api("/auth/logout", { method: "POST" }).catch(() => {});
     location.href = "/login";
   });
+  setupPush().catch(() => {});
   document.title = `${document.title.split(" · ")[0]} · ${data.businessName}`;
   setPendingCount(data.pendingApprovals);
   return data;
@@ -347,6 +353,7 @@ export function setPendingCount(count) {
 
 /** Contador de pedidos abiertos en el menú. */
 export function setOpenCount(count) {
+  desktop?.setOpenCount?.(count);
   const badge = $("#nav-open-count");
   if (!badge) return;
   badge.hidden = !count;
@@ -376,6 +383,8 @@ export function connectLive(onChange, pill = $("#live-pill")) {
     setState("off", "Reconectando…");
   });
   socket.on("change", (event) => {
+    // Pedido nuevo por atender: suena y avisa en cualquier pantalla (menos a quien lo registró).
+    if (event.scope === "orders" && event.kind === "order.created") announceNewOrder(event.data);
     // Alguien se registró o cambió una cuenta: el administrador lo ve en cualquier pantalla.
     if (event.scope === "users" && can("admin.manage")) {
       if (event.kind === "user.requested") toast("Nueva solicitud de acceso", { detail: `${event.data?.name ?? ""} · ${event.data?.role ?? ""}. Apruébala en «Personal».`, iconName: "users", timeout: 8000 });
@@ -395,4 +404,177 @@ export function debounce(fn, wait = 300) {
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), wait);
   };
+}
+
+/* ───────────── Pedido nuevo: sonido, aviso en pantalla y notificación del sistema ───────────── */
+/** La app de escritorio (Windows) expone `window.mareaEscritorio`; en el navegador no existe. */
+const desktop = window.mareaEscritorio ?? null;
+
+function announceNewOrder(order) {
+  if (!order || order.status === "ENTREGADO" || order.status === "CANCELADO") return;
+  if (order.createdById && order.createdById === session.user?.id) return;
+  const detail = `${order.customerName} · ${LABELS.source[order.source] ?? ""} · ${fmt.cop(order.total)}`;
+  chime();
+  toast(`Pedido nuevo #${order.number}`, { detail, iconName: "inbox", timeout: 8000 });
+  // En la app de escritorio, si la ventana está escondida o en segundo plano, aviso de Windows.
+  if (desktop && (document.hidden || !document.hasFocus())) {
+    desktop.attention?.();
+    try {
+      const notice = new Notification(`Pedido nuevo #${order.number}`, { body: detail, tag: `pedido-${order.id}`, icon: "/media/logo/icon-192.png" });
+      notice.onclick = () => {
+        desktop.show?.();
+        openOrder(order.id);
+      };
+    } catch {
+      // Sin notificaciones del sistema: quedan el sonido y el aviso en pantalla.
+    }
+  }
+}
+
+/** Abre un pedido: en «Pedidos» sin recargar; desde otra pantalla, la lleva a «Pedidos». */
+export function openOrder(id) {
+  if (location.pathname === "/app/pedidos") window.dispatchEvent(new CustomEvent("marea:abrir-pedido", { detail: { id } }));
+  else location.href = `/app/pedidos?pedido=${encodeURIComponent(id)}`;
+}
+
+/* ───────────── Avisos al celular / computador (Web Push) ───────────── */
+const PUSH_KEY = "marea-avisos";
+const BANNER_KEY = "marea-avisos-invitacion";
+
+function readFlag(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+function writeFlag(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Sin almacenamiento: se vuelve a preguntar la próxima vez.
+  }
+}
+
+const pushSupported = () => !desktop && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window && window.isSecureContext;
+
+function base64UrlToBytes(value) {
+  const padded = (value + "=".repeat((4 - (value.length % 4)) % 4)).replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
+}
+
+function sameKey(buffer, publicKey) {
+  if (!buffer) return false;
+  const a = new Uint8Array(buffer);
+  const b = base64UrlToBytes(publicKey);
+  return a.length === b.length && a.every((byte, index) => byte === b[index]);
+}
+
+async function currentSubscription() {
+  const registration = await navigator.serviceWorker.ready;
+  return { registration, subscription: await registration.pushManager.getSubscription() };
+}
+
+/** Suscribe este equipo y se lo cuenta al servidor. `test`: manda un aviso de prueba. */
+async function startPush({ test = false } = {}) {
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    toast("Los avisos quedaron bloqueados", { detail: "Actívalos en la configuración del navegador o de la app (Notificaciones) y vuelve a tocar la campana.", error: true, timeout: 9000 });
+    return false;
+  }
+  const { data } = await api("/push");
+  let { registration, subscription } = await currentSubscription();
+  if (subscription && !sameKey(subscription.options.applicationServerKey, data.publicKey)) {
+    await subscription.unsubscribe();
+    subscription = null;
+  }
+  subscription ??= await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(data.publicKey) });
+  await api("/push/subscriptions", { method: "POST", body: subscription.toJSON() });
+  writeFlag(PUSH_KEY, "on");
+  if (test) await api("/push/test", { method: "POST" }).catch(() => {});
+  return true;
+}
+
+/** Deja de recibir avisos en este equipo. `remember`: la persona lo apagó (no se vuelve a activar solo). */
+async function stopPush({ remember = true } = {}) {
+  if (!pushSupported()) return;
+  const registration = await navigator.serviceWorker.getRegistration();
+  const subscription = await registration?.pushManager.getSubscription();
+  if (subscription) {
+    await api("/push/subscriptions", { method: "DELETE", body: { endpoint: subscription.endpoint } }).catch(() => {});
+    await subscription.unsubscribe().catch(() => {});
+  }
+  if (remember) writeFlag(PUSH_KEY, "off");
+}
+
+async function renderPushToggle() {
+  const button = $("#push-toggle");
+  if (!button) return;
+  const permission = Notification.permission;
+  const { subscription } = await currentSubscription();
+  const on = permission === "granted" && Boolean(subscription);
+  const label = on
+    ? "Avisos de pedidos activados en este equipo (toca para apagarlos)"
+    : permission === "denied"
+      ? "Los avisos están bloqueados en este navegador"
+      : "Activar avisos de pedidos nuevos en este equipo";
+  button.hidden = false;
+  button.innerHTML = icon(on ? "bell" : "bellOff");
+  button.setAttribute("aria-pressed", String(on));
+  button.setAttribute("aria-label", label);
+  button.title = label;
+}
+
+function showPushInvitation() {
+  if (Notification.permission !== "default" || readFlag(BANNER_KEY) === "no" || $(".push-invite")) return;
+  const main = $(".main");
+  if (!main) return;
+  const invite = document.createElement("section");
+  invite.className = "push-invite";
+  invite.setAttribute("aria-label", "Avisos de pedidos");
+  invite.innerHTML = `${icon("bell")}
+    <p><strong>Entérate de cada pedido nuevo.</strong> Activa los avisos en este equipo y te llegan aunque la app esté cerrada.</p>
+    <div class="push-invite-actions">
+      <button class="btn btn-primary btn-sm" type="button" data-push="on">Activar avisos</button>
+      <button class="btn btn-ghost btn-sm" type="button" data-push="later">Ahora no</button>
+    </div>`;
+  main.prepend(invite);
+  invite.addEventListener("click", async (event) => {
+    const action = event.target.closest("[data-push]")?.dataset.push;
+    if (!action) return;
+    if (action === "later") writeFlag(BANNER_KEY, "no");
+    else await enablePushFromUser();
+    invite.remove();
+  });
+}
+
+async function enablePushFromUser() {
+  try {
+    if (await startPush({ test: true })) toast("Avisos activados en este equipo", { detail: "Te enviamos uno de prueba.", iconName: "bell" });
+  } catch {
+    toast("No se pudieron activar los avisos", { detail: "Revisa la conexión e intenta de nuevo.", error: true });
+  }
+  renderPushToggle().catch(() => {});
+}
+
+/** Registra el service worker, mantiene la suscripción al día y pinta la campana del menú. */
+async function setupPush() {
+  if (!("serviceWorker" in navigator) || !window.isSecureContext) return;
+  await navigator.serviceWorker.register("/sw.js");
+  if (!pushSupported() || !can("orders.view")) return;
+
+  // Con permiso dado, este equipo sigue recibiendo avisos (también al cambiar de persona) salvo que se apagaran.
+  if (Notification.permission === "granted" && readFlag(PUSH_KEY) !== "off") await startPush().catch(() => {});
+  await renderPushToggle();
+  $("#push-toggle")?.addEventListener("click", async () => {
+    const { subscription } = await currentSubscription();
+    if (Notification.permission === "granted" && subscription) {
+      await stopPush();
+      toast("Avisos apagados en este equipo", { iconName: "bellOff" });
+      await renderPushToggle();
+    } else {
+      await enablePushFromUser();
+    }
+  });
+  showPushInvitation();
 }

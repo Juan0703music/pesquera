@@ -1,0 +1,194 @@
+# Construye las apps de Marea y las deja para descargar en «Releases»:
+#   - Marea-Setup-<versión>.exe  (Windows)
+#   - Marea-<versión>.apk        (Android)
+# Se ejecuta a mano: Actions → «Apps (Windows y Android)» → Run workflow. Guía: docs/apps.md
+name: Apps (Windows y Android)
+
+on:
+  workflow_dispatch:
+    inputs:
+      servidor:
+        description: "Dirección de tu Marea (https://…). Vacío: la variable MAREA_URL del repositorio."
+        required: false
+        default: ""
+      version:
+        description: "Versión de las apps (por ejemplo 1.0.0; súbela en cada publicación)"
+        required: true
+        default: "1.0.0"
+      publicar:
+        description: "Publicar en «Releases» para descargar"
+        type: boolean
+        default: true
+      ensayo:
+        description: "Ensayo: solo comprobar que todo se construye (sin servidor, sin publicar)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apps
+  cancel-in-progress: false
+
+jobs:
+  preparar:
+    name: Revisar datos
+    runs-on: ubuntu-latest
+    outputs:
+      servidor: ${{ steps.datos.outputs.servidor }}
+      codigo: ${{ steps.datos.outputs.codigo }}
+    steps:
+      - id: datos
+        env:
+          SERVIDOR: ${{ inputs.servidor }}
+          MAREA_URL: ${{ vars.MAREA_URL }}
+          VERSION: ${{ inputs.version }}
+          ENSAYO: ${{ inputs.ensayo }}
+        run: |
+          if [[ ! "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::La versión debe ser como 1.0.0"
+            exit 1
+          fi
+          codigo=$(( BASH_REMATCH[1] * 10000 + BASH_REMATCH[2] * 100 + BASH_REMATCH[3] ))
+          servidor=""
+          if [ "$ENSAYO" != "true" ]; then
+            servidor="${SERVIDOR:-$MAREA_URL}"
+            servidor="${servidor%/}"
+            if [[ ! "$servidor" =~ ^https://[A-Za-z0-9.-]+(:[0-9]+)?$ ]]; then
+              echo "::error::Falta la dirección del servidor (https://…, sin ruta). Escríbela al ejecutar o crea la variable MAREA_URL."
+              exit 1
+            fi
+            status=$(curl -s -o /dev/null -w "%{http_code}" "$servidor/api/v1/health" || true)
+            if [ "$status" != "200" ]; then
+              echo "::error::$servidor no responde como Marea (salud: $status). ¿Está desplegado en Railway?"
+              exit 1
+            fi
+          fi
+          echo "servidor=$servidor" >> "$GITHUB_OUTPUT"
+          echo "codigo=$codigo" >> "$GITHUB_OUTPUT"
+
+  windows:
+    name: Instalador de Windows
+    needs: preparar
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      SERVIDOR: ${{ needs.preparar.outputs.servidor }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Logo y nombre de la pesquera (desde el servidor)
+        run: |
+          npm ci --prefix apps/iconos --no-audit --no-fund
+          node apps/iconos/generar.mjs "$SERVIDOR"
+      - name: Construir el instalador
+        working-directory: apps/escritorio
+        run: |
+          npm ci --no-audit --no-fund
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          npx electron-builder --win nsis --x64 --publish never
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows
+          path: apps/escritorio/dist/Marea-Setup-*.exe
+          if-no-files-found: error
+
+  android:
+    name: App de Android
+    needs: preparar
+    runs-on: ubuntu-latest
+    env:
+      SERVIDOR: ${{ needs.preparar.outputs.servidor }}
+      VERSION: ${{ inputs.version }}
+      CODIGO: ${{ needs.preparar.outputs.codigo }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Logo y nombre de la pesquera (desde el servidor)
+        run: |
+          npm ci --prefix apps/iconos --no-audit --no-fund
+          node apps/iconos/generar.mjs "$SERVIDOR"
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: "8.14.6"
+      - name: Llave de firma
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::Falta el secreto ANDROID_KEYSTORE_BASE64 (la llave de firma). Ver docs/apps.md."
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/marea.p12"
+      - name: Construir y firmar
+        working-directory: apps/android
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/marea.p12
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: gradle assembleRelease --no-daemon -PmareaUrl="${SERVIDOR:-https://marea.invalid}" -PmareaVersion="$VERSION" -PmareaVersionCode="$CODIGO"
+      - name: Comprobar la firma (la huella que publica el servidor en assetlinks.json)
+        working-directory: apps/android
+        run: |
+          apk=app/build/outputs/apk/release/app-release.apk
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner
+          huella=$("$apksigner" verify --print-certs "$apk" | grep -m1 "SHA-256 digest" | awk '{print $NF}' | tr 'a-f' 'A-F' | sed 's/../&:/g; s/:$//')
+          esperada=$(tr -d '[:space:]' < huella-sha256.txt)
+          echo "Huella de la app:      $huella"
+          echo "Huella del repositorio: $esperada"
+          if [ "$huella" != "$esperada" ]; then
+            echo "::error::La app no está firmada con la llave que el servidor reconoce: abriría con barra de direcciones y sin avisos."
+            exit 1
+          fi
+          if [ -n "$SERVIDOR" ] && ! curl -s "$SERVIDOR/.well-known/assetlinks.json" | grep -q "$esperada"; then
+            echo "::error::El servidor no publica esta huella en /.well-known/assetlinks.json (revisa ANDROID_CERT_SHA256)."
+            exit 1
+          fi
+          mkdir -p salida && cp "$apk" "salida/Marea-$VERSION.apk"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android
+          path: apps/android/salida/Marea-*.apk
+          if-no-files-found: error
+
+  publicar:
+    name: Publicar para descargar
+    needs: [preparar, windows, android]
+    if: ${{ inputs.publicar && !inputs.ensayo }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: salida
+          merge-multiple: true
+      - name: Crear la publicación
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+          SERVIDOR: ${{ needs.preparar.outputs.servidor }}
+        run: |
+          tag="apps-v$VERSION"
+          cat > notas.md <<NOTAS
+          Apps de Marea conectadas a **$SERVIDOR**.
+
+          - **Windows:** descarga \`Marea-Setup-$VERSION.exe\` y ábrelo. Si Windows muestra «Windows protegió su PC», toca **Más información → Ejecutar de todas formas** (el instalador no tiene firma comercial).
+          - **Android:** descarga \`Marea-$VERSION.apk\` en el celular y ábrelo. Android pedirá permitir instalar apps de esta fuente. Al abrir Marea, acepta las notificaciones.
+
+          Guía completa: docs/apps.md del repositorio.
+          NOTAS
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$tag" salida/* --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$tag" salida/* --repo "$GITHUB_REPOSITORY" --title "Marea $VERSION · Windows y Android" --notes-file notas.md --latest
+          fi

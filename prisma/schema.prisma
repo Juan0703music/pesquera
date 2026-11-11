@@ -146,6 +146,38 @@ model PaymentAccount {
   @@map("payment_accounts")
 }
 
+// ─────────────────────────────── Avisos al celular (Web Push) ───────────────────────────────
+
+/// Un celular o computador que recibe avisos («Pedido nuevo») aunque la app esté cerrada.
+/// El navegador entrega la dirección (endpoint) y las llaves; si deja de existir se borra al primer envío fallido.
+model PushSubscription {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  endpoint    String    @unique
+  p256dh      String
+  auth        String
+  /// «Android · Chrome», «Windows · Edge»… para reconocer el equipo.
+  device      String?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastSentAt  DateTime? @map("last_sent_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+/// Llaves VAPID con que el servidor firma los avisos. Se crean solas la primera vez (una sola fila);
+/// si se definen VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY, mandan esas.
+model WebPushKeys {
+  id         Int      @id @default(1)
+  publicKey  String   @map("public_key")
+  privateKey String   @map("private_key")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@map("web_push_keys")
+}
+
 // ─────────────────────────────── Personal y sesiones ───────────────────────────────
 
 model User {
@@ -161,6 +193,7 @@ model User {
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   sessions  Session[]
+  pushSubscriptions PushSubscription[]
   orders    Order[]             @relation("OrderCreatedBy")
   movements InventoryMovement[]
   events    OrderEvent[]

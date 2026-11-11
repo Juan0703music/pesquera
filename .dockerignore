@@ -13,3 +13,4 @@ src/generated
 *.log
 tests
 docs
+apps

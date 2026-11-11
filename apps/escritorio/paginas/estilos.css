@@ -1,0 +1,148 @@
+:root {
+  color-scheme: dark;
+  --fondo-1: #062130;
+  --fondo-2: #0a3346;
+  --tinta: #e6f3f8;
+  --suave: #9dbecb;
+  --acento: #3fd6e8;
+  --acento-tinta: #032430;
+  --linea: rgba(143, 179, 194, 0.22);
+  --error: #ffb4a8;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+body {
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: radial-gradient(120% 90% at 10% 0%, var(--fondo-2) 0%, var(--fondo-1) 60%);
+  color: var(--tinta);
+  font: 16px/1.5 "Segoe UI", system-ui, sans-serif;
+}
+main {
+  width: min(460px, 100%);
+}
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+.marca img {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+}
+.marca strong {
+  display: block;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+.marca span {
+  color: var(--suave);
+  font-size: 14px;
+}
+h1 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+p {
+  margin: 0 0 18px;
+  color: var(--suave);
+}
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+  background: rgba(3, 20, 30, 0.55);
+  color: var(--tinta);
+  font: inherit;
+}
+input:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+button,
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--tinta);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+button.principal {
+  border-color: transparent;
+  background: var(--acento);
+  color: var(--acento-tinta);
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.estado {
+  min-height: 24px;
+  margin: 12px 0 0;
+  font-size: 15px;
+}
+.estado[data-tipo="error"] {
+  color: var(--error);
+}
+.estado[data-tipo="ok"] {
+  color: var(--acento);
+}
+.nota {
+  margin-top: 26px;
+  padding-top: 16px;
+  border-top: 1px solid var(--linea);
+  font-size: 14px;
+}
+.punto {
+  vertical-align: 0.18em;
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--error);
+  animation: latido 1.6s ease-in-out infinite;
+}
+@keyframes latido {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .punto {
+    animation: none;
+  }
+}

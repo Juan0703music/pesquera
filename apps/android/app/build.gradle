@@ -1,0 +1,68 @@
+// Marea para Android: una «Trusted Web Activity». Abre el panel de Marea con el motor de Chrome, a
+// pantalla completa y sin barra de direcciones, y recibe los avisos de pedidos nuevos aunque esté cerrada.
+// La dirección del servidor se fija al construir: gradle assembleRelease -PmareaUrl=https://…
+plugins {
+    id "com.android.application"
+}
+
+def mareaUrl = (project.findProperty("mareaUrl") ?: "https://marea.invalid").toString().replaceAll('/+$', '')
+def mareaUri = new URI(mareaUrl)
+if (mareaUri.scheme != "https" || !mareaUri.host) throw new GradleException("mareaUrl debe ser una dirección https:// (es «${mareaUrl}»).")
+def mareaOrigin = "https://${mareaUri.host}" + (mareaUri.port > 0 ? ":${mareaUri.port}" : "")
+
+android {
+    namespace "io.github.juan0703music.marea"
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "io.github.juan0703music.marea"
+        minSdk 24
+        targetSdk 36
+        versionCode((project.findProperty("mareaVersionCode") ?: "1").toString().toInteger())
+        versionName((project.findProperty("mareaVersion") ?: "1.0.0").toString())
+
+        manifestPlaceholders = [mareaHost: mareaUri.host, mareaLaunchUrl: "${mareaOrigin}/app/pedidos"]
+        // Le dice a Chrome que este sitio y la app son del mismo dueño (el sitio lo confirma en /.well-known/assetlinks.json).
+        resValue "string", "asset_statements",
+            '[{ \\"relation\\": [\\"delegate_permission/common.handle_all_urls\\"], \\"target\\": {\\"namespace\\": \\"web\\", \\"site\\": \\"' + mareaOrigin + '\\"}}]'
+        resValue "string", "provider_authority", "io.github.juan0703music.marea.fileprovider"
+    }
+
+    signingConfigs {
+        release {
+            def keystore = System.getenv("ANDROID_KEYSTORE_FILE")
+            if (keystore) {
+                storeFile file(keystore)
+                storeType "pkcs12"
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias "marea"
+                keyPassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig System.getenv("ANDROID_KEYSTORE_FILE") ? signingConfigs.release : null
+        }
+    }
+
+    buildFeatures {
+        resValues true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+dependencies {
+    implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.7.4"
+}

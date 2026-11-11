@@ -1,0 +1,57 @@
+{
+  "name": "marea-escritorio",
+  "productName": "Marea",
+  "version": "1.0.0",
+  "description": "Marea para Windows: el panel de la pesquera en su propia ventana, con avisos de pedidos nuevos.",
+  "main": "main.js",
+  "private": true,
+  "author": "LU&MAR",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "instalador": "electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.1.0",
+    "electron-builder": "26.18.1"
+  },
+  "build": {
+    "appId": "io.github.juan0703music.marea",
+    "productName": "Marea",
+    "copyright": "LU&MAR",
+    "directories": {
+      "output": "dist",
+      "buildResources": "instalador"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "servidor.json",
+      "paginas/**",
+      "recursos/**",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "instalador/icon.png",
+      "artifactName": "Marea-Setup-${version}.exe"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "shortcutName": "Marea",
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": null
+  }
+}

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Conectar Marea</title>
+    <link rel="stylesheet" href="estilos.css" />
+    <script src="configurar.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <div class="marca">
+        <img src="../recursos/icono.png" alt="" />
+        <div><strong>Marea</strong><span>Pedidos, inventario y ventas en vivo</span></div>
+      </div>
+      <h1>Conecta este equipo con tu pesquera</h1>
+      <p>Escribe la dirección de tu Marea, la misma con que entras desde el navegador (por ejemplo <code>https://lumar.up.railway.app</code>).</p>
+      <form id="formulario" novalidate>
+        <label for="servidor">Dirección del servidor</label>
+        <input id="servidor" name="servidor" type="url" inputmode="url" autocomplete="url" placeholder="https://…" required />
+        <div class="acciones">
+          <button class="principal" type="submit" id="conectar">Conectar</button>
+        </div>
+        <p class="estado" id="estado" role="status" aria-live="polite"></p>
+      </form>
+      <p class="nota">Los datos se guardan en el servidor de la pesquera, no en este computador: puedes cambiar de equipo sin perder nada.</p>
+    </main>
+  </body>
+</html>

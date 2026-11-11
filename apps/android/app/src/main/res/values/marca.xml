@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lo reescribe apps/iconos/generar.mjs con el nombre de la pesquera al construir la app. -->
+<resources>
+    <string name="app_name">Marea</string>
+</resources>

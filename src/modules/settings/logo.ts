@@ -22,8 +22,12 @@ const VARIANTS = {
   "logo-192.webp": { size: 192, format: "webp", padded: false },
   "icon-32.png": { size: 32, format: "png", padded: false },
   "icon-192.png": { size: 192, format: "png", padded: false },
+  "icon-512.png": { size: 512, format: "png", padded: false },
   // Ícono para guardar la tienda en la pantalla del celular: cuadrado, sin transparencia (el sistema lo recorta).
   "apple-180.png": { size: 180, format: "png", padded: true },
+  // Ícono de la app instalada (Android lo recorta en círculo, gota o cuadrado): fondo completo y el logo
+  // dentro de la zona segura (el círculo central del 80 %).
+  "maskable-512.png": { size: 512, format: "png", padded: true },
 } as const;
 type Variant = keyof typeof VARIANTS;
 
@@ -54,7 +58,9 @@ const circleMask = (size: number) =>
 async function render(image: Buffer, round: boolean, variant: Variant) {
   const { size, format, padded } = VARIANTS[variant];
   if (padded) {
-    const inner = Math.round(size * 0.86);
+    const maskable = variant.startsWith("maskable-");
+    // En el ícono «maskable» un logo cuadrado debe caber en el círculo seguro (80 % ⇒ 56 % de lado).
+    const inner = Math.round(size * (maskable ? (round ? 0.74 : 0.56) : 0.86));
     let logo = sharp(image).resize(inner, inner, { fit: "contain", background: { r: 255, g: 255, b: 255, alpha: 0 } });
     if (round) logo = sharp(await logo.png().toBuffer()).composite([{ input: circleMask(inner), blend: "dest-in" }]);
     return sharp({ create: { width: size, height: size, channels: 3, background: "#ffffff" } })
@@ -70,9 +76,11 @@ async function render(image: Buffer, round: boolean, variant: Variant) {
 /** Ícono de Marea (la ola) para la pestaña cuando la pesquera aún no tiene logo. */
 async function defaultIcon(variant: Variant) {
   const { size } = VARIANTS[variant];
+  // El ícono «maskable» va a sangre (sin esquinas redondas): el sistema le pone la forma.
+  const radius = variant.startsWith("maskable-") ? 0 : 15;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
     <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3fd6e8"/><stop offset=".55" stop-color="#0b8fb0"/><stop offset="1" stop-color="#0b5f7a"/></linearGradient></defs>
-    <rect width="64" height="64" rx="15" fill="url(#g)"/>
+    <rect width="64" height="64" rx="${radius}" fill="url(#g)"/>
     <g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round">
       <path d="M12 26c5 0 6-5 10-5s6 5 10 5 6-5 10-5 6 5 10 5"/><path d="M12 36c5 0 6-5 10-5s6 5 10 5 6-5 10-5 6 5 10 5"/><path d="M12 46c5 0 6-5 10-5s6 5 10 5 6-5 10-5 6 5 10 5"/>
     </g></svg>`;

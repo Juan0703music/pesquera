@@ -13,6 +13,7 @@ import { applyStockChange, committedByProduct, OPEN_STATUSES } from "../inventor
 import { paymentAccountsService } from "../payments/payment-accounts.service.js";
 import { getBrand, getSettings } from "../settings/settings.routes.js";
 import type { CreateOrderInput, ItemInput, StoreOrderInput } from "./orders.schemas.js";
+import { pushService } from "../push/push.service.js";
 
 /** Orden del flujo: solo se avanza, nunca se devuelve. */
 const FLOW: OrderStatus[] = ["RECIBIDO", "ALISTANDO", "LISTO", "DESPACHADO", "ENTREGADO"];
@@ -143,11 +144,16 @@ async function totalsFor(lines: { lineTotal: number }[], deliveryFee = 0) {
   return { subtotal, deliveryFee, total: subtotal + deliveryFee };
 }
 
+const SOURCE_LABELS: Record<string, string> = { MOSTRADOR: "Mostrador", TELEFONO: "Llamada", WHATSAPP: "WhatsApp", WEB: "Tienda en línea" };
+
 function announceCreated(order: OrderWithItems) {
   live.emit("orders", "order.created", {
     id: order.id, number: order.number, customerName: order.customerName, total: order.total, source: order.source, status: order.status,
+    createdById: order.createdById,
   });
-  if (!isOpen(order.status)) live.emit("inventory", "inventory.sale", { number: order.number });
+  // Al celular solo van los pedidos por atender (una venta de mostrador ya quedó entregada).
+  if (isOpen(order.status)) pushService.newOrder(order, SOURCE_LABELS[order.source] ?? order.source);
+  else live.emit("inventory", "inventory.sale", { number: order.number });
 }
 
 export const ordersService = {

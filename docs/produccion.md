@@ -108,6 +108,8 @@ LOG_LEVEL=info
   propio (por ejemplo `pedidos.lumar.com.co`), escríbelo aquí.
 - `PORT` no se define: Railway la pone sola.
 - `DATABASE_POOL_MAX` (opcional, 5 por defecto): conexiones simultáneas a Supabase. 5 alcanzan para una pesquera.
+- Avisos al celular: no hace falta configurar nada (el servidor crea sus llaves la primera vez). Opcionales:
+  `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY`. Las apps de Windows y Android: [apps.md](apps.md).
 
 5. Guarda. Railway vuelve a desplegar. En **Deploy Logs** debes ver que se aplicaron las migraciones y
    `Marea escuchando…`. Si algo falta, el log lo dice con la solución (ver «Problemas comunes»).
@@ -227,3 +229,4 @@ Son precios de referencia; revísalos en las páginas de cada servicio antes de 
 - [ ] Cuenta del administrador creada con `SETUP_CODE`; después, `SETUP_CODE` borrado.
 - [ ] Datos de la pesquera, logo, cuentas de cobro y productos cargados.
 - [ ] Primera copia de seguridad hecha **y verificada** (`db:backup` + `db:backup:verify`).
+- [ ] Apps de Windows y Android construidas y publicadas ([apps.md](apps.md)).

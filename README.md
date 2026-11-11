@@ -86,6 +86,16 @@ vuelve a publicar con cada cambio en `main`. Paso a paso, variables, costos y pr
 - Todas las tablas tienen seguridad por filas (RLS) y sin permisos para la API pública de Supabase.
 - Las migraciones se aplican solas al desplegar; si fallan, sigue funcionando la versión anterior.
 
+### Apps para Windows y Android
+
+- **Windows:** instalador `.exe` con su propia ventana. Queda en la bandeja del sistema y avisa con sonido y
+  notificación de Windows cada pedido nuevo.
+- **Android:** `.apk` con el panel a pantalla completa y **avisos aunque la app esté cerrada** (Web Push).
+
+Las dos se conectan al mismo servidor, así que lo que entra en el PC sale al instante en el celular. GitHub las
+construye con el logo y el nombre de la pesquera (Actions → «Apps (Windows y Android)») y las deja en Releases.
+Guía: **[docs/apps.md](docs/apps.md)**.
+
 ### Copias de seguridad
 
 ```bash

@@ -1,5 +1,5 @@
 import {
-  $, $$, api, ApiError, can, chime, connectLive, debounce, esc, fmt, icon, LABELS, openDialog, setOpenCount, showError, showFieldErrors, startShell, toast,
+  $, $$, api, ApiError, can, connectLive, debounce, esc, fmt, icon, LABELS, openDialog, setOpenCount, showError, showFieldErrors, startShell, toast,
 } from "/js/core.js";
 import { bindCopy, copyText, payAccountHtml, paymentText } from "/js/pay.js";
 
@@ -495,6 +495,13 @@ bindCopy($("#pay-body"));
 $("#search").addEventListener("input", renderBoard);
 
 await loadBoard();
+// Al tocar un aviso de «Pedido nuevo» se abre ese pedido.
+const wanted = new URLSearchParams(location.search).get("pedido");
+if (wanted) {
+  history.replaceState(null, "", "/app/pedidos");
+  openDetail(wanted).catch(() => {});
+}
+window.addEventListener("marea:abrir-pedido", (event) => openDetail(event.detail.id).catch(() => {}));
 // Los minutos transcurridos se actualizan solos.
 setInterval(renderBoard, 30_000);
 
@@ -502,10 +509,7 @@ connectLive((event) => {
   if (event.scope === "orders" || event.scope === "all") {
     reloadBoard();
     if (state.openId && event.data?.id === state.openId) openDetail(state.openId);
-    if (event.kind === "order.created" && Date.now() - state.lastSubmit > 3000) {
-      chime();
-      toast(`Pedido nuevo #${event.data.number}`, { detail: `${event.data.customerName} · ${LABELS.source[event.data.source]} · ${fmt.cop(event.data.total)}`, iconName: "inbox" });
-    }
+    // El sonido y el aviso de «Pedido nuevo» los da core.js en todas las pantallas.
   }
   if ((event.scope === "inventory" || event.scope === "catalog") && can("orders.create")) loadProducts().catch(() => {});
   // Cambió una cuenta de cobro: la próxima vez se vuelven a pedir.

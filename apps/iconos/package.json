@@ -1,0 +1,9 @@
+{
+  "name": "marea-iconos",
+  "private": true,
+  "description": "Genera los íconos y el nombre de las apps (Windows y Android) a partir del servidor de Marea.",
+  "type": "module",
+  "dependencies": {
+    "sharp": "0.35.5"
+  }
+}
