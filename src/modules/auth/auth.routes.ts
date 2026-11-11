@@ -2,12 +2,13 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/database.js";
 import { DEMO_PASSWORD, DEMO_USERS } from "../../config/demo.js";
-import { env } from "../../config/env.js";
+import { timingSafeEqual } from "node:crypto";
+import { env, isProduction } from "../../config/env.js";
 import { authenticate, getAuth } from "../../middlewares/authenticate.js";
 import { loginLimiter, registerLimiter } from "../../middlewares/rateLimiter.js";
 import { validate } from "../../middlewares/validate.js";
 import { live } from "../../services/live.service.js";
-import { conflict } from "../../utils/errors.js";
+import { AppError, conflict, forbidden } from "../../utils/errors.js";
 import { hashPassword } from "../../utils/password.js";
 import { getBrand } from "../settings/settings.routes.js";
 import { authService } from "./auth.service.js";
@@ -25,7 +26,19 @@ const RegisterSchema = z.object({
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres.").max(200),
   /** Puesto que pide quien se registra; el administrador lo confirma o lo cambia al aprobar. Nunca administrador. */
   role: z.enum(["VENTAS", "DESPACHO", "BODEGA"], { error: "Elige tu puesto." }).default("VENTAS"),
+  /** Código de configuración (SETUP_CODE): solo para crear la primera cuenta en un servidor nuevo. */
+  setupCode: z.string().trim().max(200).optional(),
 });
+
+/** En producción (o si se definió SETUP_CODE), la primera cuenta exige el código de configuración. */
+const setupCodeRequired = () => Boolean(env.SETUP_CODE) || isProduction;
+
+function setupCodeMatches(given: string | undefined) {
+  if (!env.SETUP_CODE || !given) return false;
+  const expected = Buffer.from(env.SETUP_CODE);
+  const received = Buffer.from(given);
+  return expected.length === received.length && timingSafeEqual(expected, received);
+}
 
 /** Lo que el panel necesita saber de la persona y de la pesquera. */
 async function profile(userId: string) {
@@ -60,7 +73,10 @@ authRoutes.get("/status", async (_req, res) => {
     existing.sort((x, y) => order.indexOf(x.email) - order.indexOf(y.email));
     if (existing.length) demo = { password: DEMO_PASSWORD, users: existing.map((user) => ({ ...user, roleLabel: ROLE_LABELS[user.role] })) };
   }
-  res.set("Cache-Control", "no-store").json({ data: { needsSetup: users === 0, businessName: settings?.businessName ?? null, logo: brand.logo, demo } });
+  const needsSetup = users === 0;
+  res.set("Cache-Control", "no-store").json({
+    data: { needsSetup, setupCodeRequired: needsSetup && setupCodeRequired(), businessName: settings?.businessName ?? null, logo: brand.logo, demo },
+  });
 });
 
 authRoutes.post("/login", loginLimiter, validate({ body: LoginSchema }), async (req, res) => {
@@ -86,6 +102,10 @@ authRoutes.post("/register", registerLimiter, validate({ body: RegisterSchema })
       throw conflict("Ya existe una cuenta con ese correo. Inicia sesión o pide al administrador que la active.", "EMAIL_TAKEN");
     }
     const first = (await tx.user.count()) === 0;
+    if (first && setupCodeRequired()) {
+      if (!env.SETUP_CODE) throw new AppError(503, "SETUP_CODE_MISSING", "El servidor no tiene código de configuración (SETUP_CODE). Pídeselo a quien lo instaló.");
+      if (!setupCodeMatches(input.setupCode)) throw forbidden("El código de configuración no es correcto.", "SETUP_CODE_INVALID");
+    }
     return tx.user.create({
       data: first
         ? { name: input.name, email: input.email, passwordHash, role: "ADMIN", active: true }

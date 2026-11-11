@@ -4,12 +4,13 @@
  * Crea la pesquera de ejemplo, el equipo (un usuario por rol), el catálogo y 14 días de historia
  * (llegadas de mercancía, pedidos, ventas, mermas) para que el tablero en vivo tenga qué mostrar.
  * Si ya hay productos no hace nada; con SEED_RESET=1 borra todo y vuelve a empezar.
- * En producción no se ejecuta.
+ * En producción no se ejecuta, ni contra una base remota (Supabase): crea usuarios con una contraseña conocida.
  */
 import { randomUUID } from "node:crypto";
 import { DEMO_PASSWORD, DEMO_USERS } from "../src/config/demo.js";
 import { prisma } from "../src/config/database.js";
 import { env, isProduction } from "../src/config/env.js";
+import { isLocalDatabase } from "../src/config/pg-options.js";
 import type { Prisma } from "../src/generated/prisma/client.js";
 import type { DeliveryType, OrderSource, OrderStatus, PaymentMethod, Unit } from "../src/generated/prisma/enums.js";
 import { addDays, dateIn, startOfDay } from "../src/utils/dates.js";
@@ -17,12 +18,10 @@ import { ordersService } from "../src/modules/orders/orders.service.js";
 import { hashPassword } from "../src/utils/password.js";
 import { lineTotal } from "../src/utils/quantity.js";
 
-if (isProduction) {
-  console.error("El seed de demostración no se ejecuta en producción.");
+if (isProduction || !isLocalDatabase(env.DATABASE_URL)) {
+  console.error("El seed de demostración solo se ejecuta en la base local: crea usuarios con una contraseña conocida.");
   process.exit(1);
 }
-
-
 
 interface DemoProduct {
   name: string;

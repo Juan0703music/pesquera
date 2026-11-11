@@ -74,6 +74,26 @@ En desarrollo, la pantalla de entrada muestra botones de **Modo demostración** 
 (nunca en producción). Usuarios de la demostración (contraseña `marea12345`): `admin@pesquera.test`, `ventas@pesquera.test`,
 `despacho@pesquera.test`, `bodega@pesquera.test`. Para volver a empezar: `SEED_RESET=1 npm run db:seed`.
 
+## Producción (Supabase + Railway)
+
+La base de datos va en **Supabase** y la aplicación en **Railway**, que la construye con el `Dockerfile` y la
+vuelve a publicar con cada cambio en `main`. Paso a paso, variables, costos y problemas comunes:
+**[docs/produccion.md](docs/produccion.md)**.
+
+- Al arrancar, Marea revisa su configuración y **no arranca** si algo es inseguro: la base fuera de UTC, una base
+  remota sin cifrar, un servidor nuevo sin `SETUP_CODE` o cuentas de demostración activas.
+- La primera cuenta (administrador) se crea en `/login` con el código `SETUP_CODE`.
+- Todas las tablas tienen seguridad por filas (RLS) y sin permisos para la API pública de Supabase.
+- Las migraciones se aplican solas al desplegar; si fallan, sigue funcionando la versión anterior.
+
+### Copias de seguridad
+
+```bash
+npm run db:backup                 # copia de DATABASE_URL en backups/ (no se sube a GitHub)
+npm run db:backup:verify          # la restaura en una base temporal local, la revisa y la borra
+npm run db:restore -- backups/marea-<fecha> --target <url-de-una-base-vacía> --yes
+```
+
 ## Pruebas
 
 ```bash

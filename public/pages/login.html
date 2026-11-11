@@ -43,6 +43,7 @@
 
           <form id="register" class="stack" novalidate hidden>
             <div class="warn-box" id="setup-note" hidden>Es la primera cuenta de la pesquera: será la del <strong>administrador</strong>, con acceso a todo. Después, el resto del equipo se registra aquí y tú lo apruebas en «Personal».</div>
+            <label class="field" id="setup-code-field" hidden><span>Código de configuración</span><input class="input" name="setupCode" autocomplete="off" spellcheck="false" placeholder="El que pusiste en SETUP_CODE al instalar" /></label>
             <label class="field"><span>Nombre completo</span><input class="input" name="name" autocomplete="name" required maxlength="80" /></label>
             <label class="field"><span>Correo</span><input class="input" name="email" type="email" autocomplete="email" required /></label>
             <label class="field"><span>Contraseña (mínimo 8 caracteres)</span><input class="input" name="password" type="password" autocomplete="new-password" required minlength="8" /></label>

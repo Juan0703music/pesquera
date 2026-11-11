@@ -2,6 +2,7 @@ import http from "node:http";
 import { createApp } from "./app.js";
 import { prisma } from "./config/database.js";
 import { env } from "./config/env.js";
+import { checkReadiness } from "./config/readiness.js";
 import { attachSocket } from "./config/socket.js";
 import { logger } from "./utils/logger.js";
 
@@ -13,6 +14,14 @@ process.on("unhandledRejection", (reason) => {
   logger.fatal({ err: reason }, "Promesa rechazada sin manejar: el proceso se reinicia");
   process.exit(1);
 });
+
+// Antes de recibir tráfico: la base responde y la configuración de producción está completa.
+const readiness = await checkReadiness();
+for (const warning of readiness.warnings) logger.warn(`Configuración: ${warning}`);
+if (readiness.errors.length) {
+  for (const error of readiness.errors) logger.fatal(`Configuración: ${error}`);
+  process.exit(1);
+}
 
 const server = http.createServer(createApp());
 // Socket.IO comparte el servidor HTTP en /socket.io/ (pantallas en vivo del equipo).

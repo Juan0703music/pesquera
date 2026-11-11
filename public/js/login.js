@@ -53,7 +53,10 @@ $("#register").addEventListener("submit", async (event) => {
   try {
     const { data } = await api("/auth/register", {
       method: "POST",
-      body: { name: form.name.value.trim(), email: form.email.value.trim(), password: form.password.value, role: form.role.value },
+      body: {
+        name: form.name.value.trim(), email: form.email.value.trim(), password: form.password.value, role: form.role.value,
+        ...(form.setupCode.value.trim() ? { setupCode: form.setupCode.value.trim() } : {}),
+      },
     });
     if (data.status === "ACTIVE") {
       // Primera cuenta: es el administrador y ya tiene la sesión abierta.
@@ -98,6 +101,7 @@ try {
     $("#role-field").hidden = true;
     $("#register-help").hidden = true;
     $("#register-submit").textContent = "Crear cuenta de administrador";
+    $("#setup-code-field").hidden = !data.setupCodeRequired;
     $("#tabs").hidden = true;
     setMode("register");
   }
