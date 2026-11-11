@@ -126,8 +126,13 @@ jobs:
       - name: Llave de firma
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ENSAYO: ${{ inputs.ensayo }}
         run: |
           if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            if [ "$ENSAYO" = "true" ]; then
+              echo "::warning::Sin la llave de firma: el ensayo construye la app sin firmar."
+              exit 0
+            fi
             echo "::error::Falta el secreto ANDROID_KEYSTORE_BASE64 (la llave de firma). Ver docs/apps.md."
             exit 1
           fi
@@ -135,12 +140,18 @@ jobs:
       - name: Construir y firmar
         working-directory: apps/android
         env:
-          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/marea.p12
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-        run: gradle assembleRelease --no-daemon -PmareaUrl="${SERVIDOR:-https://marea.invalid}" -PmareaVersion="$VERSION" -PmareaVersionCode="$CODIGO"
+        run: |
+          if [ -f "$RUNNER_TEMP/marea.p12" ]; then export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/marea.p12"; fi
+          gradle assembleRelease --no-daemon -PmareaUrl="${SERVIDOR:-https://marea.invalid}" -PmareaVersion="$VERSION" -PmareaVersionCode="$CODIGO"
       - name: Comprobar la firma (la huella que publica el servidor en assetlinks.json)
         working-directory: apps/android
         run: |
+          mkdir -p salida
+          if [ ! -f "$RUNNER_TEMP/marea.p12" ]; then
+            cp app/build/outputs/apk/release/app-release-unsigned.apk "salida/Marea-$VERSION-ensayo-sin-firmar.apk"
+            exit 0
+          fi
           apk=app/build/outputs/apk/release/app-release.apk
           apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner
           huella=$("$apksigner" verify --print-certs "$apk" | grep -m1 "SHA-256 digest" | awk '{print $NF}' | tr 'a-f' 'A-F' | sed 's/../&:/g; s/:$//')
@@ -155,7 +166,7 @@ jobs:
             echo "::error::El servidor no publica esta huella en /.well-known/assetlinks.json (revisa ANDROID_CERT_SHA256)."
             exit 1
           fi
-          mkdir -p salida && cp "$apk" "salida/Marea-$VERSION.apk"
+          cp "$apk" "salida/Marea-$VERSION.apk"
       - uses: actions/upload-artifact@v7
         with:
           name: android
