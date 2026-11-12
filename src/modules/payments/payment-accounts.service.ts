@@ -1,12 +1,13 @@
-import jsqrModule from "jsqr";
 import QRCode from "qrcode";
-import sharp from "sharp";
 import { prisma } from "../../config/database.js";
 import type { PaymentAccount } from "../../generated/prisma/client.js";
 import type { PaymentAccountKind, PaymentMethod } from "../../generated/prisma/enums.js";
 import { live } from "../../services/live.service.js";
 import { AppError, notFound } from "../../utils/errors.js";
 import type { PaymentAccountInput } from "./payment-accounts.schemas.js";
+import { qrPng, readQr } from "./qr-image.js";
+
+export { readQr };
 
 /**
  * Cuentas donde la pesquera recibe pagos: llaves Bre-B, Nequi, Daviplata y cuentas bancarias.
@@ -90,29 +91,6 @@ const sortAccounts = (accounts: PaymentAccount[]) =>
 /** Cuentas de esos tipos, en el orden de los tipos (paga con Nequi → primero Nequi, luego la llave Bre-B). */
 function forKinds(accounts: PresentedAccount[], kinds: PaymentAccountKind[]) {
   return accounts.filter((account) => kinds.includes(account.kind)).sort((a, b) => kinds.indexOf(a.kind) - kinds.indexOf(b.kind));
-}
-
-// jsQR es CommonJS: según el cargador, la función llega como default o como default.default.
-type ReadQr = (data: Uint8ClampedArray, width: number, height: number, options?: { inversionAttempts?: string }) => { data: string } | null;
-const jsQR = ((jsqrModule as unknown as { default?: ReadQr }).default ?? jsqrModule) as unknown as ReadQr;
-
-/** Lee el código QR de una imagen (pantallazo o foto). Prueba varios tamaños porque jsQR es sensible a la escala. */
-export async function readQr(input: Buffer): Promise<string | null> {
-  for (const size of [1600, 1000, 2400, 700]) {
-    try {
-      const { data, info } = await sharp(input, { limitInputPixels: 50_000_000 })
-        .rotate()
-        .resize({ width: size, height: size, fit: "inside", withoutEnlargement: true })
-        .ensureAlpha()
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-      const found = jsQR(new Uint8ClampedArray(data.buffer, data.byteOffset, data.length), info.width, info.height, { inversionAttempts: "attemptBoth" });
-      if (found?.data) return found.data;
-    } catch {
-      throw new AppError(415, "INVALID_IMAGE", "No pudimos abrir esa imagen. Sube un pantallazo en PNG, JPG o WebP.");
-    }
-  }
-  return null;
 }
 
 async function findAccount(id: string) {
@@ -215,6 +193,6 @@ export const paymentAccountsService = {
   async qrPng(id: string) {
     const account = await prisma.paymentAccount.findUnique({ where: { id } });
     if (!account || !account.active || !account.qrPayload) throw notFound("Esa cuenta no tiene QR de pago.", "PAYMENT_QR_NOT_FOUND");
-    return QRCode.toBuffer(account.qrPayload, { type: "png", width: 900, margin: 4, errorCorrectionLevel: "M" });
+    return qrPng(account.qrPayload);
   },
 };

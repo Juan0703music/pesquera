@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pedidos</title>
+    <script src="/js/theme.js"></script>
+    <link rel="icon" type="image/png" href="/media/logo/icon-32.png" />
+    <link rel="apple-touch-icon" href="/media/logo/apple-180.png" />
+    <meta name="theme-color" content="#062130" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <script type="module" src="/js/pedidos.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar"></aside>
+      <main class="main">
+        <div class="page-head">
+          <div>
+            <h1>Pedidos</h1>
+            <div class="sub" id="board-summary">Cargando…</div>
+          </div>
+          <span class="live-pill" id="live-pill" data-state="connecting"><span class="live-dot"></span><span>Conectando…</span></span>
+          <div class="spacer"></div>
+          <button class="btn" id="btn-counter" hidden></button>
+          <button class="btn btn-primary" id="btn-new" hidden></button>
+        </div>
+        <div class="toolbar">
+          <label class="search"><span class="sr-only">Buscar pedido</span><input class="input" id="search" type="search" placeholder="Buscar por número, cliente o producto" autocomplete="off" /></label>
+        </div>
+        <div class="board" id="board"></div>
+        <section class="card closed-today">
+          <div class="card-head"><h2>Cerrados hoy</h2><span class="muted" id="closed-count"></span></div>
+          <div class="card-body table-wrap" id="closed"></div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="order-dialog" aria-labelledby="order-dialog-title">
+      <form class="modal" id="order-form" novalidate>
+        <div class="modal-head">
+          <h2 id="order-dialog-title">Nuevo pedido</h2>
+          <div class="spacer"></div>
+          <button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body stack">
+          <div class="row">
+            <div class="segmented" role="radiogroup" aria-label="¿Por dónde llegó?">
+              <label><input type="radio" name="source" value="MOSTRADOR" checked /><span data-icon="counter">Mostrador</span></label>
+              <label><input type="radio" name="source" value="TELEFONO" /><span data-icon="phone">Llamada</span></label>
+              <label><input type="radio" name="source" value="WHATSAPP" /><span data-icon="chat">WhatsApp</span></label>
+            </div>
+          </div>
+          <div class="grid-2">
+            <label class="field suggest"><span>Cliente</span><input class="input" name="customer.name" autocomplete="off" required placeholder="Nombre o negocio" /><div class="suggest-list" id="customer-suggest" hidden></div></label>
+            <label class="field"><span>Celular</span><input class="input" name="customer.phone" inputmode="tel" autocomplete="off" placeholder="300 123 4567" /></label>
+          </div>
+
+          <div>
+            <div class="section-title">Productos</div>
+            <div class="add-line">
+              <label class="field"><span>Producto</span><select class="input" id="line-product"></select></label>
+              <label class="field"><span id="line-qty-label">Cantidad</span><input class="input num" id="line-qty" inputmode="decimal" placeholder="0" /></label>
+              <label class="field"><span>Indicación</span><input class="input" id="line-note" placeholder="Limpio, en filete…" maxlength="120" /></label>
+              <button type="button" class="btn" id="add-line"></button>
+            </div>
+            <div class="field-error" id="line-error" hidden></div>
+            <div class="lines" id="lines"></div>
+            <div class="empty" id="lines-empty">Agrega los productos del pedido.</div>
+          </div>
+
+          <div class="grid-3">
+            <label class="field"><span>Forma de pago</span>
+              <select class="input" name="paymentMethod">
+                <option value="EFECTIVO">Efectivo</option><option value="NEQUI">Nequi</option><option value="TRANSFERENCIA">Transferencia</option>
+                <option value="DATAFONO">Datáfono</option><option value="CREDITO">Crédito (fiado)</option>
+              </select>
+            </label>
+            <div class="field"><span>&nbsp;</span><label class="check"><input type="checkbox" name="paid" /> Ya pagó</label></div>
+          </div>
+          <label class="field"><span>Notas</span><input class="input" name="notes" maxlength="300" placeholder="Llamar al llegar, factura a nombre de…" /></label>
+          <label class="check" id="complete-now-field"><input type="checkbox" name="completeNow" /> Se lo lleva ya (venta de mostrador: se descuenta del inventario al guardar)</label>
+          <div class="totals" id="form-totals"></div>
+          <div class="error-box" id="form-error" hidden></div>
+        </div>
+        <div class="modal-foot">
+          <span class="muted">Por kilo, el total final depende del peso real.</span>
+          <div class="spacer"></div>
+          <button type="button" class="btn" data-close>Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="save-order">Guardar pedido</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="pay-dialog" aria-labelledby="pay-title">
+      <div class="modal pay-modal">
+        <div class="modal-head"><h2 id="pay-title">Cobrar</h2><div class="spacer"></div><button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar"></button></div>
+        <div class="modal-body" id="pay-body"></div>
+        <div class="modal-foot">
+          <span class="muted">Cuando veas el pago en tu banco, regístralo con «Registrar pago».</span>
+          <div class="spacer"></div>
+          <button type="button" class="btn" id="pay-copy">Copiar datos de pago</button>
+          <a class="btn btn-primary" id="pay-whatsapp" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="detail-dialog" class="drawer-dialog" aria-labelledby="detail-title">
+      <div class="drawer" id="detail"></div>
+    </dialog>
+  </body>
+</html>

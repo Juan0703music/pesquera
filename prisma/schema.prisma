@@ -13,6 +13,15 @@ generator client {
   importFileExtension = "js"
 }
 
+// Cliente para la versión que corre dentro del navegador (web/): sin dependencias de Node.
+generator web {
+  provider            = "prisma-client"
+  output              = "../web/generado/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+  runtime             = "workerd"
+}
+
 datasource db {
   provider = "postgresql"
 }

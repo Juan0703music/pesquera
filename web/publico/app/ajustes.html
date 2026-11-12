@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ajustes</title>
+    <script src="/js/theme.js"></script>
+    <link rel="icon" type="image/png" href="/media/logo/icon-32.png" />
+    <link rel="apple-touch-icon" href="/media/logo/apple-180.png" />
+    <meta name="theme-color" content="#062130" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <script type="module" src="/js/ajustes.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar"></aside>
+      <main class="main">
+        <div class="page-head"><div><h1>Ajustes</h1><div class="sub">Datos de la pesquera y copias de seguridad.</div></div></div>
+        <section class="card logo-card" aria-labelledby="logo-title">
+          <div class="card-body logo-settings">
+            <div class="logo-preview" id="logo-preview"></div>
+            <div class="stack">
+              <div><h2 id="logo-title">Logo de la pesquera</h2><p class="muted">Se ve en el panel, en la entrada y en la pestaña del navegador. PNG, JPG o WebP; se guarda sin metadatos.</p></div>
+              <label class="switch"><input type="checkbox" id="logo-round" checked /><span class="track" aria-hidden="true"></span>Mi logo es redondo (mostrarlo como círculo)</label>
+              <div class="row">
+                <label class="btn btn-primary">Subir logo<input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp" class="sr-only" /></label>
+                <button type="button" class="btn btn-ghost btn-danger" id="logo-remove" hidden>Quitar logo</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <form class="card" id="settings-form" novalidate>
+          <div class="card-body stack">
+            <div class="section-title">La pesquera</div>
+            <div class="grid-2">
+              <label class="field"><span>Nombre</span><input class="input" name="businessName" required maxlength="80" /></label>
+              <label class="field"><span>Dirección (donde recogen los pedidos)</span><input class="input" name="address" maxlength="200" /></label>
+            </div>
+            <div class="grid-2">
+              <label class="field"><span>Teléfono</span><input class="input" name="phone" inputmode="tel" placeholder="300 123 4567" /></label>
+              <label class="field"><span>WhatsApp (celular)</span><input class="input" name="whatsapp" inputmode="tel" placeholder="300 123 4567" /></label>
+            </div>
+            <div class="error-box" id="settings-error" hidden></div>
+          </div>
+          <div class="modal-foot"><div class="spacer"></div><button class="btn btn-primary" type="submit">Guardar ajustes</button></div>
+        </form>
+        <section class="card copias-card" aria-labelledby="copias-title">
+          <div class="card-body stack">
+            <div>
+              <h2 id="copias-title">Copia de seguridad</h2>
+              <p class="muted">Todo lo de Marea (pedidos, inventario, ventas, personal, fotos y logo) está guardado solo en este navegador de este computador. Descarga una copia cada semana y guárdala también en una USB o en tu correo. Con ella puedes pasarte a otro computador.</p>
+            </div>
+            <dl class="copias-estado" id="copias-estado"></dl>
+            <div class="row">
+              <button class="btn btn-primary" type="button" id="copia-descargar">Descargar copia</button>
+              <label class="btn">Restaurar una copia<input type="file" id="copia-archivo" accept=".gz,.tar.gz,application/gzip" class="sr-only" /></label>
+            </div>
+            <div class="warn-box">Restaurar reemplaza <strong>todo</strong> lo que hay en este navegador por lo de la copia. Si no estás seguro, descarga primero una copia de lo actual.</div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

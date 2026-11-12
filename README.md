@@ -5,6 +5,21 @@ Recibe pedidos, los despacha con el **peso real**, lleva el **inventario por kil
 
 > «Marea» es un nombre provisional. El nombre de la pesquera se cambia en **Ajustes** y aparece en el panel y en la tienda.
 
+## Úsalo en el navegador (la forma principal)
+
+**<https://juan0703music.github.io/pesquera/>**: se abre en Edge o Chrome. **No necesita servidor ni nube.**
+
+- Todo se guarda dentro del navegador de ese computador: PostgreSQL en WebAssembly, con la misma lógica de este
+  repositorio.
+- Cada persona del equipo entra tocando su nombre, con PIN si lo tiene.
+- Las copias de seguridad se descargan desde Ajustes.
+
+Guía: **[docs/navegador.md](docs/navegador.md)**.
+
+Esta versión no tiene la tienda en línea ni los avisos al celular, porque los datos no salen del computador. Lo
+que sigue en este README describe además la versión con servidor (Supabase + Railway), que se conserva en el
+repositorio por si algún día se quiere en la nube.
+
 ## Qué hace
 
 | Pantalla | Para qué | Quién la ve |

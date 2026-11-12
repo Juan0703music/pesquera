@@ -23,7 +23,11 @@
     "db:backup:verify": "tsx scripts/backup.ts verify",
     "db:restore": "tsx scripts/backup.ts restore",
     "demo:live": "tsx scripts/demo-live.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "web:construir": "node web/construir.mjs",
+    "web:servir": "node web/servir.mjs",
+    "web:tipos": "tsc -p tsconfig.web.json",
+    "web:pruebas": "vitest run -c vitest.web.config.ts"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
@@ -46,6 +50,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.12",
     "@types/express": "^5.0.6",
     "@types/node": "^24.19.2",
     "@types/pg": "^8.23.1",
@@ -54,8 +59,11 @@
     "@types/supertest": "^7.2.1",
     "@types/three": "^0.187.0",
     "@types/web-push": "^3.6.4",
+    "buffer": "^6.0.3",
     "embedded-postgres": "^18.4.0-beta.17",
+    "esbuild": "^0.28.2",
     "pg-copy-streams": "^7.0.0",
+    "pglite-prisma-adapter": "^0.7.2",
     "pino-pretty": "^13.2.0",
     "socket.io-client": "^4.8.4",
     "supertest": "^7.3.2",

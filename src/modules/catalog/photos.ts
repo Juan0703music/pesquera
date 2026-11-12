@@ -1,11 +1,11 @@
 import express, { Router } from "express";
-import sharp from "sharp";
 import { z } from "zod";
 import { prisma } from "../../config/database.js";
 import { requirePermission } from "../../middlewares/authenticate.js";
 import { validate } from "../../middlewares/validate.js";
 import { live } from "../../services/live.service.js";
-import { AppError, badRequest, notFound } from "../../utils/errors.js";
+import { badRequest, notFound } from "../../utils/errors.js";
+import { processPhoto } from "./photo-image.js";
 
 /**
  * Fotos de los productos. Se suben desde Inventario y se guardan ya procesadas:
@@ -14,27 +14,6 @@ import { AppError, badRequest, notFound } from "../../utils/errors.js";
  * Van en la base de datos (tabla aparte): una pesquera tiene pocas decenas de productos y así la copia de
  * seguridad de la base incluye todo.
  */
-
-const MIN_SIDE = 320;
-
-export async function processPhoto(input: Buffer) {
-  let meta;
-  try {
-    meta = await sharp(input, { limitInputPixels: 60_000_000 }).metadata();
-  } catch {
-    throw new AppError(415, "INVALID_IMAGE", "No pudimos abrir esa imagen. Sube una foto en JPG, PNG o WebP.");
-  }
-  if (!meta.width || !meta.height) throw new AppError(415, "INVALID_IMAGE", "No pudimos abrir esa imagen. Sube una foto en JPG, PNG o WebP.");
-  if (Math.min(meta.width, meta.height) < MIN_SIDE) {
-    throw new AppError(422, "PHOTO_TOO_SMALL", `La foto es muy pequeña (${meta.width} × ${meta.height}). Usa una de al menos ${MIN_SIDE} píxeles por lado.`);
-  }
-  const base = () => sharp(input, { limitInputPixels: 60_000_000 }).rotate();
-  const [large, small] = await Promise.all([
-    base().resize({ width: 1400, height: 1400, fit: "inside", withoutEnlargement: true }).webp({ quality: 80 }).toBuffer(),
-    base().resize({ width: 640, height: 480, fit: "cover", position: sharp.strategy.attention }).webp({ quality: 78 }).toBuffer(),
-  ]);
-  return { large, small };
-}
 
 /** Dirección pública de la foto; cambia con cada foto nueva (el navegador puede guardarla para siempre). */
 export function photoUrls(product: { id: string; photoVersion: number; photo: unknown }) {

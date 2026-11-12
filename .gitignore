@@ -14,3 +14,7 @@ src/generated/
 *.log
 .DS_Store
 backups/
+
+# Versión del navegador: lo que se genera al construir
+web/dist/
+web/generado/

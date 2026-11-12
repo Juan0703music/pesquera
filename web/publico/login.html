@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Entrar · Marea</title>
+    <script src="/js/theme.js"></script>
+    <link rel="icon" type="image/png" href="/media/logo/icon-32.png" />
+    <meta name="theme-color" content="#062130" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <script type="module" src="/js/login.js"></script>
+  </head>
+  <body>
+    <div class="auth">
+      <section class="auth-art" aria-hidden="true">
+        <canvas id="waves"></canvas>
+        <div class="auth-brand" id="auth-brand"><span class="brand-mark" id="mark"></span><strong>Marea</strong></div>
+        <div>
+          <h1>Del muelle al cliente, todo en vivo.</h1>
+          <p>Pedidos, despacho, inventario por kilo y ventas del día de la pesquera en una sola pantalla.</p>
+        </div>
+      </section>
+      <section class="auth-form">
+        <div class="auth-theme" id="theme"></div>
+        <div class="auth-box stack">
+          <div>
+            <h2 id="auth-title">¿Quién va a usar Marea?</h2>
+            <p class="muted" id="business"></p>
+          </div>
+
+          <!-- Primera vez en este navegador -->
+          <form id="setup" class="stack" novalidate hidden>
+            <p class="muted">Configura tu pesquera. Serás el <strong>administrador</strong>: después agregas al resto del equipo en «Personal».</p>
+            <label class="field"><span>Nombre de la pesquera</span><input class="input" name="businessName" required maxlength="80" autocomplete="organization" /></label>
+            <label class="field"><span>Tu nombre</span><input class="input" name="name" required maxlength="80" autocomplete="name" /></label>
+            <label class="field"><span>PIN para entrar (opcional, de 4 a 8 números)</span><input class="input" name="pin" inputmode="numeric" pattern="\d*" maxlength="8" autocomplete="new-password" /></label>
+            <p class="muted small">Sin PIN, cualquiera que use este computador entra como administrador.</p>
+            <div class="error-box" id="setup-error" hidden></div>
+            <button class="btn btn-primary btn-lg" type="submit">Empezar</button>
+            <div class="restore-box">
+              <span>¿Vienes de otro computador?</span>
+              <label class="btn btn-sm">Restaurar una copia de seguridad<input type="file" id="restore-file" accept=".gz,.tar.gz,application/gzip" class="sr-only" /></label>
+            </div>
+          </form>
+
+          <!-- El equipo: cada persona toca su nombre -->
+          <div id="people" class="demo-grid people-grid" hidden></div>
+
+          <form id="pin-form" class="stack" novalidate hidden>
+            <label class="field"><span id="pin-label">PIN</span><input class="input pin-input" name="pin" inputmode="numeric" pattern="\d*" maxlength="8" autocomplete="current-password" required /></label>
+            <div class="error-box" id="pin-error" hidden></div>
+            <div class="row">
+              <button class="btn" type="button" id="pin-back">Volver</button>
+              <button class="btn btn-primary" type="submit">Entrar</button>
+            </div>
+          </form>
+
+          <div class="error-box" id="status-error" hidden></div>
+          <p class="muted small local-note">Los datos de Marea se guardan en este navegador, en este computador. Haz copias de seguridad desde «Ajustes».</p>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

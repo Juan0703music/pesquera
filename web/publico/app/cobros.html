@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cuentas de cobro</title>
+    <script src="/js/theme.js"></script>
+    <link rel="icon" type="image/png" href="/media/logo/icon-32.png" />
+    <link rel="apple-touch-icon" href="/media/logo/apple-180.png" />
+    <meta name="theme-color" content="#062130" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <script type="module" src="/js/cobros.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar"></aside>
+      <main class="main">
+        <div class="page-head">
+          <div>
+            <h1>Cuentas de cobro</h1>
+            <div class="sub">Donde te pagan tus clientes: llaves Bre-B, Nequi, Daviplata y cuentas bancarias, con su QR.</div>
+          </div>
+          <div class="spacer"></div>
+          <button class="btn btn-primary" id="btn-new"></button>
+        </div>
+        <ol class="howto" id="howto">
+          <li><span><strong>Abre la app de tu banco o billetera</strong>Busca «Recibir», «Cobrar» o «Mi QR Bre-B».</span></li>
+          <li><span><strong>Toma un pantallazo del QR</strong>Que se vea completo y nítido. Sirve también una foto.</span></li>
+          <li><span><strong>Súbelo aquí</strong>Marea lee el código y lo muestra nítido a tus clientes. La imagen no se guarda.</span></li>
+        </ol>
+        <div class="accounts-grid" id="accounts"></div>
+      </main>
+    </div>
+
+    <dialog id="account-dialog" aria-labelledby="account-title">
+      <form class="modal" id="account-form" novalidate>
+        <div class="modal-head"><h2 id="account-title">Nueva cuenta de cobro</h2><div class="spacer"></div><button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar"></button></div>
+        <div class="modal-body stack">
+          <div class="segmented" role="radiogroup" aria-label="Tipo de cuenta">
+            <label><input type="radio" name="kind" value="BRE_B" checked /><span>Llave Bre-B</span></label>
+            <label><input type="radio" name="kind" value="NEQUI" /><span>Nequi</span></label>
+            <label><input type="radio" name="kind" value="DAVIPLATA" /><span>Daviplata</span></label>
+            <label><input type="radio" name="kind" value="BANCO" /><span>Cuenta bancaria</span></label>
+          </div>
+          <p class="muted" id="kind-help"></p>
+          <label class="field"><span id="key-label">Llave Bre-B</span><input class="input" name="accountKey" autocomplete="off" required maxlength="80" /></label>
+          <div class="grid-2" id="bank-fields" hidden>
+            <label class="field"><span>Banco</span><input class="input" name="bankName" maxlength="60" placeholder="Bancolombia, Davivienda, BBVA…" /></label>
+            <label class="field"><span>Tipo de cuenta</span><select class="input" name="bankAccountType"><option value="AHORROS">Ahorros</option><option value="CORRIENTE">Corriente</option></select></label>
+          </div>
+          <div class="grid-2">
+            <label class="field"><span>Titular (como aparece en el banco)</span><input class="input" name="holderName" required maxlength="80" /></label>
+            <label class="field"><span>Cédula o NIT del titular (opcional)</span><input class="input" name="holderDocument" inputmode="numeric" maxlength="20" placeholder="900123456-7" /></label>
+          </div>
+          <div class="field">
+            <span>QR para recibir pagos (opcional)</span>
+            <label class="qr-preview">
+              <img id="qr-preview-img" alt="" hidden />
+              <span class="stack">
+                <span id="qr-preview-text" class="muted">Sube el pantallazo del QR que te da tu banco o billetera (PNG, JPG o WebP).</span>
+                <input type="file" name="qr" accept="image/png,image/jpeg,image/webp" />
+              </span>
+            </label>
+          </div>
+          <label class="switch"><input type="checkbox" name="active" checked /><span class="track" aria-hidden="true"></span>Usarla para cobrar</label>
+          <div class="error-box" id="account-error" hidden></div>
+        </div>
+        <div class="modal-foot"><div class="spacer"></div><button type="button" class="btn" data-close>Cancelar</button><button type="submit" class="btn btn-primary" id="account-save">Guardar cuenta</button></div>
+      </form>
+    </dialog>
+  </body>
+</html>
