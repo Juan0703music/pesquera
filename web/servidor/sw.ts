@@ -9,6 +9,7 @@
  */
 import { atender } from "./api.js";
 import { abrirBase, esperarCambio } from "./db.js";
+import { configurarSitio } from "./tienda.js";
 
 declare const self: ServiceWorkerGlobalScope;
 declare const __MAREA_VERSION__: string;
@@ -16,6 +17,7 @@ declare const __MAREA_ARCHIVOS__: string[];
 declare const __MAREA_MOTOR__: { version: string; archivos: string[] };
 
 const BASE = new URL(self.registration.scope).pathname; // p. ej. «/pesquera/»
+configurarSitio(self.location.origin, BASE);
 const CACHE_APP = `marea-app-${__MAREA_VERSION__}`;
 const CACHE_MOTOR = `marea-motor-${__MAREA_MOTOR__.version}`;
 

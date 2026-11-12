@@ -21,6 +21,7 @@ import { createResponse, Router, type Req, type Res } from "./express.js";
 import { personalRoutes } from "./personal.js";
 import { respaldoRoutes } from "./respaldo.js";
 import { sesionRoutes } from "./sesion.js";
+import { tiendaRoutes } from "./tienda.js";
 
 const api = Router();
 api.get("/health", async (_req: Req, res: Res) => {
@@ -45,6 +46,7 @@ api.use("/payment-accounts", paymentAccountsRoutes);
 api.use("/sales", salesRoutes);
 api.use("/analytics", analyticsRoutes);
 api.use("/respaldo", respaldoRoutes);
+api.use("/tienda", tiendaRoutes);
 
 const raiz = Router();
 raiz.use("/api/v1", api, apiNotFound);

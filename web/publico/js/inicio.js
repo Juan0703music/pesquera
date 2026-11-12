@@ -2,7 +2,7 @@
 import { motorListo, sesionGuardada, showError } from "/js/core.js";
 
 try {
-  await motorListo;
+  await motorListo();
   location.replace(sesionGuardada.get() ? "/app/pedidos" : "/login");
 } catch (error) {
   const main = document.querySelector("main");

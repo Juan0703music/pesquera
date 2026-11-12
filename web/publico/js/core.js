@@ -238,7 +238,12 @@ async function prepararMotor() {
   navigator.storage?.persist?.().catch(() => {});
 }
 
-export const motorListo = prepararMotor();
+// Solo el panel arranca el motor (la tienda del cliente usa este archivo solo por sus utilidades).
+let motor = null;
+export function motorListo() {
+  motor ??= prepararMotor();
+  return motor;
+}
 
 function sessionHeaders(extra = {}) {
   const token = sesionGuardada.get();
@@ -258,7 +263,7 @@ async function responder(res, path) {
 }
 
 export async function api(path, { method = "GET", body } = {}) {
-  await motorListo;
+  await motorListo();
   let res;
   try {
     res = await fetch(`/api/v1${path}`, {
@@ -274,14 +279,14 @@ export async function api(path, { method = "GET", body } = {}) {
 
 /** Sube un archivo tal cual (foto, logo, QR, copia de seguridad). */
 export async function apiRaw(path, { method = "PUT", body } = {}) {
-  await motorListo;
+  await motorListo();
   const res = await fetch(`/api/v1${path}`, { method, headers: sessionHeaders({ "Content-Type": body.type || "application/octet-stream" }), body });
   return responder(res, path);
 }
 
 /** Descarga un archivo de la API y lo guarda en el computador. */
 export async function descargar(path, nombre) {
-  await motorListo;
+  await motorListo();
   const res = await fetch(`/api/v1${path}`, { headers: sessionHeaders() });
   if (!res.ok) await responder(res, path);
   const disposition = res.headers.get("content-disposition") ?? "";
@@ -433,6 +438,8 @@ export async function startShell(pageId, permission) {
     location.href = "/login";
   });
   if (can("admin.manage")) recordarCopia();
+  // Tienda por QR: una de las pestañas abiertas hace de puente con los celulares de los clientes.
+  import("/js/puente-tienda.js").then((modulo) => modulo.iniciarPuente()).catch(() => {});
   document.title = `${document.title.split(" · ")[0]} · ${data.businessName}`;
   setPendingCount(data.pendingApprovals);
   return data;

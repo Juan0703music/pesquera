@@ -31,7 +31,8 @@ async function popularity(since: Date) {
   return new Map(rows.map((row) => [row.product_id, row.orders]));
 }
 
-storeRoutes.get("/", async (_req, res) => {
+/** Catálogo de la tienda: lo que se ve en /tienda (y lo que publica la tienda del QR en la versión del navegador). */
+export async function buildStoreCatalog() {
   const today = dayRange(todayIn());
   const [settings, categories, committed, payment, arrivals, popular, brand] = await Promise.all([
     getSettings(),
@@ -53,8 +54,7 @@ storeRoutes.get("/", async (_req, res) => {
     getBrand(),
   ]);
   const arrivedAt = new Map(arrivals.map((row) => [row.productId, row._max.createdAt]));
-  res.set("Cache-Control", "no-store").json({
-    data: {
+  return {
       // Cuentas para pagar por transferencia (llave Bre-B, Nequi, Daviplata, banco) y cuáles van con cada forma de pago.
       payment,
       business: {
@@ -84,8 +84,11 @@ storeRoutes.get("/", async (_req, res) => {
             };
           }),
         })),
-    },
-  });
+  };
+}
+
+storeRoutes.get("/", async (_req, res) => {
+  res.set("Cache-Control", "no-store").json({ data: await buildStoreCatalog() });
 });
 
 storeRoutes.post("/orders", storeOrderLimiter, validate({ body: StoreOrderSchema }), async (req, res) => {

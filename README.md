@@ -16,8 +16,11 @@ Recibe pedidos, los despacha con el **peso real**, lleva el **inventario por kil
 
 Guía: **[docs/navegador.md](docs/navegador.md)**.
 
-Esta versión no tiene la tienda en línea ni los avisos al celular, porque los datos no salen del computador. Lo
-que sigue en este README describe además la versión con servidor (Supabase + Railway), que se conserva en el
+**Tienda por QR:** los clientes escanean, piden desde su celular y el pedido entra al instante a «Recibidos»; cada
+cliente sigue su pedido en vivo. Los mensajes viajan cifrados por retransmisores públicos de la red Nostr, sin
+servidor, mientras Marea esté abierto en el PC con internet.
+
+Lo que sigue en este README describe además la versión con servidor (Supabase + Railway), que se conserva en el
 repositorio por si algún día se quiere en la nube.
 
 ## Qué hace

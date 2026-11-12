@@ -48,6 +48,38 @@ pierde lo que no tenga copia.
 - **En un computador nuevo:** abre la dirección. En la primera pantalla toca **«Restaurar una copia de
   seguridad»**, elige el archivo y listo: todo vuelve, con el mismo equipo y los mismos PIN.
 
+## Tienda por QR (los clientes piden desde su celular)
+
+Los clientes escanean el QR, ven la pizarra del día (productos, fotos, precios y lo que llegó hoy) y hacen su pedido.
+El pedido aparece **al instante** en «Pedidos → Recibidos», con sonido. El cliente ve en su celular, en vivo, cada
+paso: recibido, alistando y listo para recoger.
+
+**Activarla (una sola vez):** Ajustes → **Tienda por QR → Activar la tienda por QR**. Ahí mismo puedes:
+
+- **Descargar el QR** o **Imprimir cartel** para el mostrador. El QR no cambia nunca: imprímelo una vez.
+- **Copiar enlace** para tu estado de WhatsApp o tus redes.
+- **Recibir pedidos por el QR:** sí o no. En pausa, los clientes ven la tienda pero no pueden pedir.
+- **Pedido mínimo.**
+- Ver la **conexión**, por ejemplo «En línea (5 de 5 retransmisores)».
+
+**Cuándo funciona:** mientras Marea esté **abierto en este computador, con alguien adentro y con internet**. El
+cliente puede usar datos móviles o cualquier wifi. Si el PC está apagado o sin internet, la tienda dice «En este
+momento la pesquera no está conectada» y no deja pedir. Cuando vuelve, se abre sola.
+
+**Cómo funciona por dentro:**
+
+- No hay servidor ni nube. Tu navegador y los celulares se hablan a través de **retransmisores públicos y
+  gratuitos de la red Nostr**. Marea usa 5 a la vez, por si alguno falla.
+- **El catálogo es público:** lo que ves en la tienda.
+- **Cada pedido y cada aviso van cifrados:** solo tu Marea puede leer los pedidos, y solo el celular del cliente
+  puede leer los avisos de su pedido. Ni los retransmisores pueden leerlos.
+- **La llave de la tienda** (la que hace que el QR sea tuyo) queda guardada en Marea y va en las copias de
+  seguridad. Si restauras una copia en otro computador, el QR impreso sigue sirviendo.
+- **Protecciones:**
+  - Un mismo celular no puede mandar más de 5 pedidos por hora.
+  - Se rechaza lo que pida más de lo disponible.
+  - El cliente recibe el motivo de cualquier rechazo.
+
 ## Cosas para tener en cuenta
 
 - **Un solo computador y un solo navegador.** Los datos de Edge no los ve Chrome, ni otro computador, ni el
@@ -56,8 +88,7 @@ pierde lo que no tenga copia.
   datos: para eso es la copia de seguridad.
 - **Varias pestañas o ventanas a la vez sí funcionan.** Por ejemplo, «En vivo 3D» en un televisor como segunda
   pantalla: se actualiza al instante con cada pedido.
-- **Sin tienda en línea ni avisos al celular.** Los clientes piden por WhatsApp, por teléfono o en el mostrador, y
-  el equipo los registra en «Pedidos».
+- **Sin avisos al celular del equipo.** Los pedidos del QR suenan en el PC donde está Marea abierto.
 - **Actualizaciones:** cada mejora que se publique llega sola la próxima vez que se abra Marea. Los datos no se
   tocan.
 
@@ -74,6 +105,13 @@ pierde lo que no tenga copia.
   - **Rutas:** las mismas de `src/modules/*`, con un enrutador compatible con Express (`express.ts`).
   - **Reemplazos del navegador:** sharp → canvas (`imagenes.ts`), argon2 → PIN con PBKDF2 (`cripto.ts`),
     cookies → cabecera `X-Marea-Sesion`, Socket.IO → `BroadcastChannel` entre pestañas.
+- **Tienda por QR:**
+  - `web/servidor/tienda.ts`, en el service worker, guarda la llave, firma el catálogo, abre los pedidos
+    cifrados (NIP-17) y prepara los avisos.
+  - `web/publico/js/puente-tienda.js` es el puente: una sola pestaña, con un candado entre pestañas, que habla con
+    los retransmisores.
+  - `web/publico/js/tienda-red.js` es la tienda del celular.
+  - Los retransmisores están en `web/servidor/tienda-comun.ts`.
 - `web/construir.mjs`: empaqueta todo con esbuild en `web/dist`. `web/servir.mjs` lo sirve en este computador
   igual que GitHub Pages.
 - **Restaurar:** la copia se abre en una base nueva (`idb://marea-<fecha>`). Cuando está lista pasa a ser la

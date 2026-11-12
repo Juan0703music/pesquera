@@ -1,5 +1,6 @@
 import { $, api, apiRaw, ApiError, icon, logoImg, showError, showFieldErrors, startShell, toast } from "/js/core.js";
 import "/js/copias.js";
+import "/js/tienda-qr.js";
 
 const local = (phone) => (phone ? phone.slice(2).replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3") : "");
 const money = (value) => Number(String(value).replace(/\D/g, "")) || 0;

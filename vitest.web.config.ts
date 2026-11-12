@@ -20,6 +20,7 @@ const REEMPLAZOS = new Map([
   [ts("src/modules/catalog/photo-image.ts"), ts("web/servidor/foto-imagen.ts")],
   [ts("src/modules/settings/logo-image.ts"), ts("web/servidor/logo-imagen.ts")],
   [ts("src/modules/payments/qr-image.ts"), ts("web/servidor/qr-imagen.ts")],
+  [ts("src/middlewares/rateLimiter.ts"), ts("web/servidor/limites.ts")],
 ]);
 const PRISMA_SERVIDOR = ts("src/generated/prisma") + path.sep;
 const PRISMA_WEB = ts("web/generado/prisma") + path.sep;

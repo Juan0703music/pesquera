@@ -36,7 +36,7 @@ export function payAccountHtml(account, { qr = "big", download = false } = {}) {
           <button type="button" class="btn btn-sm btn-soft" data-copy="${esc(account.accountKey)}" aria-label="Copiar ${esc(prettyKey(account))}">${icon("copy", "icon-sm")}Copiar</button>
         </div>
         <span class="pay-holder">A nombre de <strong>${esc(account.holderName)}</strong>${account.holderDocument ? ` · ${esc(account.holderDocument)}` : ""}</span>
-        ${download && account.qrSvg ? `<a class="pay-download" href="/api/v1/store/payment-accounts/${account.id}/qr.png" download="qr-de-pago.png">${icon("download", "icon-sm")}Guardar el QR en el celular</a>` : ""}
+        ${download && account.qrSvg ? `<a class="pay-download" href="#" data-qr-guardar>${icon("download", "icon-sm")}Guardar el QR en el celular</a>` : ""}
       </div>
     </article>`;
 }
@@ -74,6 +74,11 @@ export function bindCopy(root) {
   if (root.dataset.copyBound) return;
   root.dataset.copyBound = "1";
   root.addEventListener("click", async (event) => {
+    const guardarQr = event.target.closest("[data-qr-guardar]");
+    if (guardarQr) {
+      event.preventDefault();
+      return guardarQrComoImagen(guardarQr.closest(".pay-card, .pay-account, article, li, div")?.querySelector(".qr-box svg"));
+    }
     const button = event.target.closest("[data-copy]");
     if (!button) return;
     const ok = await copyText(button.dataset.copy);
@@ -82,3 +87,29 @@ export function bindCopy(root) {
 }
 
 export { copyText };
+
+/** Convierte el QR (SVG) en una imagen PNG y la descarga: así se carga en la app del banco desde la galería. */
+async function guardarQrComoImagen(svg) {
+  if (!svg) return toast("No encontramos el QR.", { error: true });
+  const texto = new XMLSerializer().serializeToString(svg);
+  const url = URL.createObjectURL(new Blob([texto], { type: "image/svg+xml" }));
+  try {
+    const imagen = new Image();
+    imagen.src = url;
+    await imagen.decode();
+    const lienzo = Object.assign(document.createElement("canvas"), { width: 900, height: 900 });
+    const ctx = lienzo.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, 900, 900);
+    ctx.drawImage(imagen, 0, 0, 900, 900);
+    const png = await new Promise((resolve) => lienzo.toBlob(resolve, "image/png"));
+    const enlace = Object.assign(document.createElement("a"), { href: URL.createObjectURL(png), download: "qr-de-pago.png" });
+    document.body.append(enlace);
+    enlace.click();
+    enlace.remove();
+  } catch {
+    toast("No se pudo guardar el QR: tómale un pantallazo.", { error: true });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}

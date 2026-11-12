@@ -187,6 +187,34 @@ model WebPushKeys {
   @@map("web_push_keys")
 }
 
+// ─────────────────────────────── Tienda por QR (versión del navegador) ───────────────────────────────
+
+/// Llave de la tienda por QR: firma el catálogo y descifra los pedidos que llegan por la red Nostr.
+/// Una sola fila; se crea al activar la tienda. Nunca sale de la base (va en las copias de seguridad).
+model StoreKey {
+  id        Int      @id @default(1)
+  secretKey String   @map("secret_key")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@map("store_keys")
+}
+
+/// Pedido que llegó por la tienda del QR: para no registrarlo dos veces y para avisarle al cliente cada cambio.
+model OnlineOrder {
+  /// Identificador del mensaje cifrado que mandó el celular del cliente.
+  messageId      String   @id @map("message_id")
+  orderId        String   @unique @map("order_id") @db.Uuid
+  /// Llave pública del celular del cliente (a ella van los avisos del estado).
+  customerPubkey String   @map("customer_pubkey")
+  trackingKey    String   @map("tracking_key")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([customerPubkey])
+  @@map("online_orders")
+}
+
 // ─────────────────────────────── Personal y sesiones ───────────────────────────────
 
 model User {
@@ -366,6 +394,8 @@ model Order {
   @@index([status])
   @@index([dispatchedAt])
   @@index([createdAt])
+  onlineOrder OnlineOrder?
+
   @@map("orders")
 }
 

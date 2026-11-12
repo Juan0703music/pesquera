@@ -29,6 +29,34 @@
             </div>
           </div>
         </section>
+        <section class="card tienda-qr-card" aria-labelledby="tqr-title">
+          <div class="card-body tienda-qr">
+            <div class="tienda-qr-codigo" id="tqr-codigo"><span class="logo-empty">Sin activar</span></div>
+            <div class="stack">
+              <div>
+                <h2 id="tqr-title">Tienda por QR</h2>
+                <p class="muted">Tus clientes escanean el QR, ven tus productos y precios del día y piden. El pedido te llega a «Recibidos» al instante y el cliente ve en vivo cómo va. Funciona mientras Marea esté abierto en este computador, con alguien adentro y con internet.</p>
+              </div>
+              <div id="tqr-inactiva" hidden>
+                <button class="btn btn-primary" type="button" id="tqr-activar">Activar la tienda por QR</button>
+                <p class="muted small">Tu catálogo (productos, precios, fotos y cuentas de cobro) se publica en internet para que los clientes lo vean. Los pedidos viajan cifrados: solo este Marea los puede leer.</p>
+              </div>
+              <div class="stack" id="tqr-activa" hidden>
+                <div class="row tqr-ajustes">
+                  <label class="switch"><input type="checkbox" id="tqr-abierta" /><span class="track" aria-hidden="true"></span>Recibir pedidos por el QR</label>
+                  <label class="field tqr-minimo"><span>Pedido mínimo</span><input class="input num" id="tqr-minimo" inputmode="numeric" /></label>
+                </div>
+                <dl class="copias-estado" id="tqr-estado"></dl>
+                <div class="row">
+                  <button class="btn btn-primary" type="button" id="tqr-descargar">Descargar el QR</button>
+                  <button class="btn" type="button" id="tqr-imprimir">Imprimir cartel</button>
+                  <button class="btn" type="button" id="tqr-copiar">Copiar enlace</button>
+                  <a class="btn btn-ghost" id="tqr-abrir" target="_blank" rel="noopener">Ver la tienda</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
         <form class="card" id="settings-form" novalidate>
           <div class="card-body stack">
             <div class="section-title">La pesquera</div>
@@ -60,5 +88,12 @@
         </section>
       </main>
     </div>
+    <section class="cartel-qr" id="cartel" aria-hidden="true">
+      <img id="cartel-logo" alt="" hidden />
+      <h1 id="cartel-nombre"></h1>
+      <p class="cartel-llamado">Escanea y pide</p>
+      <img id="cartel-qr" alt="" />
+      <p>Mira los precios del día, haz tu pedido y te avisamos en vivo cuando esté listo.</p>
+    </section>
   </body>
 </html>

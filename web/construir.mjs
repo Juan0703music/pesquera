@@ -38,7 +38,7 @@ const escribir = (destino, datos) => {
 
 /* ───────────── 1. Pantallas, con las direcciones según la base ───────────── */
 // Direcciones absolutas del sitio («/js/…», «/app/pedidos», «/login»…) → «/pesquera/js/…».
-const DIRECCIONES = /(["'`(=])\/(api\/v1|js\/|css\/|media\/|vendor\/|app\/|app(?=["'`])|login(?=["'`?#])|404\.html)/g;
+const DIRECCIONES = /(["'`(=])\/(api\/v1|js\/|css\/|media\/|vendor\/|app\/|app(?=["'`])|login(?=["'`?#])|tienda(?=["'`?#]|\/pedido)|404\.html)/g;
 const reescribir = (texto) => (BASE === "/" ? texto : texto.replace(DIRECCIONES, `$1${BASE}$2`));
 
 function copiarCarpeta(origen, destino) {
@@ -77,6 +77,19 @@ const MOTOR = {
 };
 for (const [destino, origen] of Object.entries(MOTOR)) escribir(path.join(DIST, destino), readFileSync(origen));
 
+/* ───────────── 3b. Nostr para las pantallas (puente del panel y tienda del cliente) ───────────── */
+await build({
+  entryPoints: [desde("web/servidor/nostr-pagina.ts")],
+  outfile: path.join(DIST, "js/nostr.js"),
+  bundle: true,
+  format: "esm",
+  platform: "browser",
+  target: "es2022",
+  minify: true,
+  legalComments: "none",
+  logLevel: "warning",
+});
+
 /* ───────────── 4. Listas de archivos y versiones (para guardarlos y poder abrir sin internet) ───────────── */
 function listar(carpeta, prefijo = "") {
   return readdirSync(carpeta).flatMap((nombre) => {
@@ -106,6 +119,7 @@ const REEMPLAZOS = new Map([
   [ts("src/modules/catalog/photo-image.ts"), ts("web/servidor/foto-imagen.ts")],
   [ts("src/modules/settings/logo-image.ts"), ts("web/servidor/logo-imagen.ts")],
   [ts("src/modules/payments/qr-image.ts"), ts("web/servidor/qr-imagen.ts")],
+  [ts("src/middlewares/rateLimiter.ts"), ts("web/servidor/limites.ts")],
 ]);
 const PRISMA_SERVIDOR = ts("src/generated/prisma") + path.sep;
 const PRISMA_WEB = ts("web/generado/prisma") + path.sep;
