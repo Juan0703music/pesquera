@@ -1,5 +1,5 @@
 // Ajustes → Tienda por QR: activar, abrir o pausar, ver la conexión, y el QR para imprimir o compartir.
-import { $, api, descargar, esc, fmt, motorListo, sesionGuardada, showError, toast } from "/js/core.js";
+import { $, api, descargar, esc, fmt, imprimirCartelTienda, motorListo, sesionGuardada, showError, toast } from "/js/core.js";
 
 const money = (value) => Number(String(value).replace(/\D/g, "")) || 0;
 let config = null;
@@ -13,7 +13,6 @@ async function cargarQr() {
   if (qrUrl) URL.revokeObjectURL(qrUrl);
   qrUrl = URL.createObjectURL(await res.blob());
   $("#tqr-codigo").innerHTML = `<img src="${qrUrl}" alt="Código QR de la tienda" />`;
-  $("#cartel-qr").src = qrUrl;
 }
 
 function hora(iso) {
@@ -83,19 +82,7 @@ $("#tqr-copiar").addEventListener("click", async () => {
     prompt("Copia el enlace de tu tienda:", config.enlace);
   }
 });
-$("#tqr-imprimir").addEventListener("click", async () => {
-  const { data } = await api("/settings");
-  $("#cartel-nombre").textContent = data.businessName;
-  if (data.logo) {
-    $("#cartel-logo").src = data.logo.large;
-    $("#cartel-logo").hidden = false;
-  }
-  document.body.classList.add("imprimiendo-cartel");
-  setTimeout(() => {
-    window.print();
-    document.body.classList.remove("imprimiendo-cartel");
-  }, 300);
-});
+$("#tqr-imprimir").addEventListener("click", () => imprimirCartelTienda(qrUrl).catch(showError));
 
 // Estado del puente (lo maneja una de las pestañas de Marea).
 const canal = new BroadcastChannel("marea-puente");

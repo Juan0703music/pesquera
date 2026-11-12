@@ -39,7 +39,7 @@ function card(order) {
     <article class="order-card${state.seen.has(order.id) || state.firstLoad ? "" : " is-new"}" data-id="${order.id}">
       <div class="order-top">
         <button class="btn-ghost order-num" data-open="${order.id}" aria-label="Ver pedido ${order.number} de ${esc(order.customerName)}">#${order.number}</button>
-        <span class="badge" title="${LABELS.source[order.source]}">${icon(LABELS.sourceIcon[order.source])}${LABELS.source[order.source]}</span>
+        <span class="badge order-source" title="${LABELS.source[order.source]}">${icon(LABELS.sourceIcon[order.source])}${order.source === "WEB" ? "En línea" : LABELS.source[order.source]}</span>
         <span class="order-time${late ? " late" : ""}" title="Recibido a las ${fmt.time(order.createdAt)}">${icon("clock", "icon-sm")}${fmt.ago(order.createdAt)}</span>
       </div>
       <div class="order-customer">${esc(order.customerName)}</div>

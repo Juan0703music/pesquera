@@ -1292,8 +1292,17 @@ dialog.drawer-dialog {
 }
 .order-top {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px 8px;
+  min-width: 0;
+}
+/* En columnas angostas, el origen se recorta con «…» y el tiempo baja de línea en vez de salirse de la tarjeta. */
+.order-top .order-source {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .order-num {
   font-family: var(--font-display);

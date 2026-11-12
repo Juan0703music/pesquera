@@ -385,6 +385,7 @@ const NAV = [
   { href: "/app/inventario", label: "Inventario", icon: "box", permission: "inventory.view", id: "inventario" },
   { href: "/app/ventas", label: "Ventas del día", icon: "cash", permission: "sales.view", id: "ventas" },
   { href: "/app/en-vivo", label: "En vivo 3D", icon: "pulse", permission: "analytics.view", id: "en-vivo" },
+  { href: "#compartir-tienda", label: "Compartir tienda", icon: "store", permission: "orders.view", id: "compartir", accion: "compartir-tienda" },
   { sep: true },
   { href: "/app/personal", label: "Personal", icon: "users", permission: "admin.manage", id: "personal" },
   { href: "/app/cobros", label: "Cuentas de cobro", icon: "qr", permission: "admin.manage", id: "cobros" },
@@ -422,7 +423,7 @@ export async function startShell(pageId, permission) {
         .map((item) =>
           item.sep
             ? '<div class="nav-sep" role="separator"></div>'
-            : `<a href="${item.href}" ${item.id === pageId ? 'aria-current="page"' : ""} ${item.external ? 'target="_blank" rel="noopener"' : ""}>${icon(item.icon)}<span>${item.label}</span>${item.id === "pedidos" ? '<span class="badge badge-count" id="nav-open-count" hidden></span>' : ""}${item.id === "personal" ? '<span class="badge badge-count" id="nav-pending" title="Solicitudes de acceso por aprobar" hidden></span>' : ""}</a>`,
+            : `<a href="${item.href}" ${item.id === pageId ? 'aria-current="page"' : ""} ${item.external ? 'target="_blank" rel="noopener"' : ""} ${item.accion ? `data-accion="${item.accion}" role="button"` : ""}>${icon(item.icon)}<span>${item.label}</span>${item.id === "pedidos" ? '<span class="badge badge-count" id="nav-open-count" hidden></span>' : ""}${item.id === "personal" ? '<span class="badge badge-count" id="nav-pending" title="Solicitudes de acceso por aprobar" hidden></span>' : ""}</a>`,
         )
         .join("")}
     </nav>
@@ -438,6 +439,10 @@ export async function startShell(pageId, permission) {
     location.href = "/login";
   });
   if (can("admin.manage")) recordarCopia();
+  sidebar.querySelector('[data-accion="compartir-tienda"]')?.addEventListener("click", (event) => {
+    event.preventDefault();
+    abrirCompartirTienda().catch(showError);
+  });
   // Tienda por QR: una de las pestañas abiertas hace de puente con los celulares de los clientes.
   import("/js/puente-tienda.js").then((modulo) => modulo.iniciarPuente()).catch(() => {});
   document.title = `${document.title.split(" · ")[0]} · ${data.businessName}`;
@@ -552,4 +557,126 @@ function recordarCopia() {
     <button class="btn btn-primary btn-sm" type="button">Descargar copia</button>`;
   main.prepend(aviso);
   aviso.querySelector("button").addEventListener("click", () => descargarCopia().catch(showError));
+}
+
+/* ───────────── Compartir la tienda por QR (desde cualquier pantalla del panel) ───────────── */
+/** El QR de la tienda como imagen (lo genera el service worker). */
+export async function qrDeTienda() {
+  await motorListo();
+  const res = await fetch("/api/v1/tienda/qr.png", { headers: sessionHeaders() });
+  if (!res.ok) await responder(res, "/tienda/qr.png");
+  return res.blob();
+}
+
+/** Cartel para el mostrador: logo, nombre, «Escanea y pide» y el QR grande. */
+export async function imprimirCartelTienda(qrUrl) {
+  const { data } = await api("/settings");
+  let cartel = document.querySelector("#cartel");
+  if (!cartel) {
+    cartel = document.createElement("section");
+    cartel.className = "cartel-qr";
+    cartel.id = "cartel";
+    cartel.setAttribute("aria-hidden", "true");
+    cartel.innerHTML = `<img id="cartel-logo" alt="" hidden /><h1 id="cartel-nombre"></h1><p class="cartel-llamado">Escanea y pide</p><img id="cartel-qr" alt="" /><p>Mira los precios del día, haz tu pedido y te avisamos en vivo cuando esté listo.</p>`;
+    document.body.append(cartel);
+  }
+  cartel.querySelector("#cartel-nombre").textContent = data.businessName;
+  const logo = cartel.querySelector("#cartel-logo");
+  logo.hidden = !data.logo;
+  if (data.logo) logo.src = data.logo.large;
+  const qr = cartel.querySelector("#cartel-qr");
+  qr.src = qrUrl;
+  await qr.decode().catch(() => {});
+  document.body.classList.add("imprimiendo-cartel");
+  setTimeout(() => {
+    window.print();
+    document.body.classList.remove("imprimiendo-cartel");
+  }, 200);
+}
+
+let compartirQrUrl = null;
+
+async function pintarCompartir(dialogo) {
+  const cuerpo = dialogo.querySelector(".modal-body");
+  const { data: tienda } = await api("/tienda/estado");
+  if (!tienda.activada) {
+    cuerpo.innerHTML = can("admin.manage")
+      ? `<div class="stack"><p>Tu tienda por QR todavía no está activada. Al activarla, tus clientes escanean el QR, ven tus productos y precios del día, y te piden desde su celular.</p>
+         <p class="muted small">El catálogo (productos, precios, fotos y cuentas de cobro) se publica en internet. Los pedidos viajan cifrados: solo este Marea los puede leer.</p>
+         <div><button class="btn btn-primary" type="button" data-ct="activar">${icon("qr")}Activar la tienda por QR</button></div></div>`
+      : `<p>La tienda por QR todavía no está activada. Pídele al administrador que la active en «Ajustes».</p>`;
+    return;
+  }
+  if (compartirQrUrl) URL.revokeObjectURL(compartirQrUrl);
+  compartirQrUrl = URL.createObjectURL(await qrDeTienda());
+  const negocio = session.businessName || "nuestra pesquera";
+  const mensaje = `¡Haz tu pedido en ${negocio}! Mira los productos y precios de hoy, pide desde tu celular y te avisamos cuando esté listo: ${tienda.enlace}`;
+  const puedeCompartir = typeof navigator.share === "function";
+  cuerpo.innerHTML = `
+    <div class="compartir-grid">
+      <img class="compartir-qr" src="${compartirQrUrl}" alt="Código QR de la tienda de ${esc(negocio)}" />
+      <div class="stack">
+        <p>Tus clientes escanean este código con la cámara del celular, ven tus productos y precios de hoy, y piden. El pedido te llega a «Recibidos» al instante y ellos ven en vivo cómo va.</p>
+        <p class="compartir-estado" id="ct-estado"><span class="live-dot"></span>${tienda.abierta ? "Recibiendo pedidos" : "En pausa: los clientes ven la tienda, pero no pueden pedir"}</p>
+        <label class="field"><span>Enlace de tu tienda</span>
+          <div class="compartir-enlace"><input class="input" readonly value="${esc(tienda.enlace)}" id="ct-enlace" /><button class="btn" type="button" data-ct="copiar">${icon("copy", "icon-sm")}Copiar</button></div>
+        </label>
+        <div class="row compartir-acciones">
+          <a class="btn btn-primary" href="https://wa.me/?text=${encodeURIComponent(mensaje)}" target="_blank" rel="noopener">${icon("chat")}Enviar por WhatsApp</a>
+          ${puedeCompartir ? `<button class="btn" type="button" data-ct="compartir">${icon("upload")}Compartir…</button>` : ""}
+          <button class="btn" type="button" data-ct="descargar">${icon("download")}Descargar QR</button>
+          <button class="btn" type="button" data-ct="imprimir">${icon("print")}Imprimir cartel</button>
+        </div>
+        <p class="muted small">Funciona mientras Marea esté abierto en este computador y con internet.${can("admin.manage") ? " Pausa los pedidos o pon un pedido mínimo en «Ajustes»." : ""}</p>
+      </div>
+    </div>`;
+  dialogo.dataset.mensaje = mensaje;
+  dialogo.dataset.enlace = tienda.enlace;
+}
+
+/** Ventana «Comparte tu tienda»: el QR, el enlace y cómo enviarlo. */
+export async function abrirCompartirTienda() {
+  let dialogo = document.querySelector("#compartir-tienda");
+  if (!dialogo) {
+    dialogo = document.createElement("dialog");
+    dialogo.id = "compartir-tienda";
+    dialogo.setAttribute("aria-labelledby", "ct-titulo");
+    dialogo.innerHTML = `<div class="modal compartir-modal">
+      <div class="modal-head"><h2 id="ct-titulo">Comparte tu tienda</h2><div class="spacer"></div><button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Cerrar">${icon("x")}</button></div>
+      <div class="modal-body"><p class="muted">Cargando…</p></div></div>`;
+    document.body.append(dialogo);
+    dialogo.addEventListener("click", async (event) => {
+      if (event.target.closest("[data-close]")) return dialogo.close();
+      const accion = event.target.closest("[data-ct]")?.dataset.ct;
+      if (!accion) return;
+      try {
+        if (accion === "activar") {
+          await api("/tienda/estado", { method: "PUT", body: { abierta: true } });
+          toast("Tienda por QR activada", { detail: "Ya puedes compartir el QR.", iconName: "qr" });
+          await pintarCompartir(dialogo);
+        } else if (accion === "copiar") {
+          try {
+            await navigator.clipboard.writeText(dialogo.dataset.enlace);
+          } catch {
+            const campo = dialogo.querySelector("#ct-enlace");
+            campo.select();
+            document.execCommand("copy");
+          }
+          toast("Enlace copiado", { detail: "Pégalo en tu estado de WhatsApp o en tus redes.", iconName: "copy" });
+        } else if (accion === "compartir") {
+          const archivo = new File([await qrDeTienda()], "qr-tienda.png", { type: "image/png" });
+          const datos = { title: "Haz tu pedido", text: dialogo.dataset.mensaje };
+          await navigator.share(navigator.canShare?.({ files: [archivo] }) ? { ...datos, files: [archivo] } : { ...datos, url: dialogo.dataset.enlace }).catch(() => {});
+        } else if (accion === "descargar") {
+          await descargar("/tienda/qr.png", "qr-tienda.png");
+        } else if (accion === "imprimir") {
+          await imprimirCartelTienda(compartirQrUrl);
+        }
+      } catch (error) {
+        showError(error);
+      }
+    });
+  }
+  openDialog(dialogo);
+  await pintarCompartir(dialogo);
 }

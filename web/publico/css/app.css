@@ -1292,8 +1292,17 @@ dialog.drawer-dialog {
 }
 .order-top {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px 8px;
+  min-width: 0;
+}
+/* En columnas angostas, el origen se recorta con «…» y el tiempo baja de línea en vez de salirse de la tarjeta. */
+.order-top .order-source {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .order-num {
   font-family: var(--font-display);
@@ -3086,5 +3095,60 @@ body.wall .wall-brand {
   .cartel-qr p {
     max-width: 14cm;
     font-size: 18px;
+  }
+}
+
+/* ───────────── Compartir la tienda (ventana del menú) ───────────── */
+.compartir-modal .modal-body {
+  overflow-y: auto;
+}
+.compartir-grid {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.compartir-qr {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: var(--radius);
+  background: #ffffff;
+  border: 1px solid var(--border);
+}
+.compartir-grid p {
+  margin: 0;
+  line-height: 1.5;
+}
+.compartir-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+}
+.compartir-estado .live-dot {
+  background: var(--good);
+}
+.compartir-enlace {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.compartir-enlace .input {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+}
+.compartir-acciones {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .compartir-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .compartir-qr {
+    max-width: 260px;
+    justify-self: center;
   }
 }
