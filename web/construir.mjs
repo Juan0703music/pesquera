@@ -52,6 +52,8 @@ function copiarCarpeta(origen, destino) {
 }
 copiarCarpeta(path.join(WEB, "publico"), DIST);
 writeFileSync(path.join(DIST, ".nojekyll"), ""); // GitHub Pages: servir los archivos tal cual
+// Netlify (al conectar GitHub o al arrastrar la carpeta): el service worker se revisa en cada visita.
+writeFileSync(path.join(DIST, "_headers"), `${BASE}sw.js\n  Cache-Control: no-cache\n`);
 
 /* ───────────── 2. Three.js y la tipografía (sin CDN) ───────────── */
 const three = desde("node_modules/three/build");
@@ -103,7 +105,7 @@ const huella = (archivos) => {
   for (const archivo of archivos.sort()) hash.update(archivo).update(readFileSync(path.join(DIST, archivo)));
   return hash.digest("hex").slice(0, 12);
 };
-const archivosApp = listar(DIST).filter((archivo) => !archivo.startsWith("motor/") && archivo !== ".nojekyll");
+const archivosApp = listar(DIST).filter((archivo) => !archivo.startsWith("motor/") && ![".nojekyll", "_headers"].includes(archivo));
 const archivosMotor = Object.keys(MOTOR);
 
 /* ───────────── 5. El «servidor»: service worker con las rutas de Marea ───────────── */

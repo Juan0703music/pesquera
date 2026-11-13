@@ -1,0 +1,10 @@
+# Marea en Netlify (versión del navegador: sin servidor, los datos quedan en el navegador de cada PC).
+# Netlify → Add new site → Import an existing project → GitHub → Juan0703music/pesquera: con este archivo
+# ya sabe cómo construirla. Cada cambio que llegue a «main» se vuelve a publicar solo.
+# (Las cabeceras van en web/dist/_headers, que crea web/construir.mjs.)
+[build]
+  command = "node web/construir.mjs"
+  publish = "web/dist"
+
+[build.environment]
+  NODE_VERSION = "24"

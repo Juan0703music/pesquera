@@ -127,6 +127,16 @@ npm run web:servir           # http://localhost:4173/
 node web/construir.mjs --base /pesquera/ && node web/servir.mjs --base /pesquera/   # igual que en GitHub Pages
 ```
 
+**Netlify (opcional, en vez de GitHub Pages):**
+
+- Con GitHub: Netlify → **Add new site → Import an existing project → GitHub → `pesquera`**. El archivo
+  `netlify.toml` le dice cómo construirla (`node web/construir.mjs` y publicar `web/dist`). Cada cambio en `main` se
+  publica solo.
+- A mano: arrastra la carpeta `web/dist` (construida con `node web/construir.mjs`) a <https://app.netlify.com/drop>.
+
+Usa **una sola dirección**. Cada dirección guarda sus propios datos en el navegador, y el QR de la tienda lleva
+la dirección donde se activó.
+
 **Publicación:** cada cambio en `main` que toque `web/`, `src/` o `prisma/` se publica solo en GitHub Pages
 (Actions → «Marea en el navegador»). Antes de publicar se revisan los tipos y se corren las pruebas.
 
